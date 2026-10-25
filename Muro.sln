@@ -1,0 +1,57 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31903.59
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{9C2A980B-858C-4F0D-BF23-4F176789F020}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Muro.Core", "src\Muro.Core\Muro.Core.csproj", "{F47F1E00-2FA5-4F93-A88B-25CFA9EA4806}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Muro.Engine", "src\Muro.Engine\Muro.Engine.csproj", "{522D501B-824F-4AA3-ABE5-745FB90CB2BB}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Muro.Platform", "src\Muro.Platform\Muro.Platform.csproj", "{F55EC1E5-B188-4B96-AC30-AC75A44DE683}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Muro.Playback", "src\Muro.Playback\Muro.Playback.csproj", "{7F90735B-2E8B-456E-A3FC-371E012CA5A9}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{1BB6DBB6-8489-48C2-AAC5-835CC79A6331}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Muro.Core.Tests", "tests\Muro.Core.Tests\Muro.Core.Tests.csproj", "{AA36D610-8C03-434E-96FA-0EDE8ECB5067}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{F47F1E00-2FA5-4F93-A88B-25CFA9EA4806}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F47F1E00-2FA5-4F93-A88B-25CFA9EA4806}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F47F1E00-2FA5-4F93-A88B-25CFA9EA4806}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F47F1E00-2FA5-4F93-A88B-25CFA9EA4806}.Release|Any CPU.Build.0 = Release|Any CPU
+		{522D501B-824F-4AA3-ABE5-745FB90CB2BB}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{522D501B-824F-4AA3-ABE5-745FB90CB2BB}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{522D501B-824F-4AA3-ABE5-745FB90CB2BB}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{522D501B-824F-4AA3-ABE5-745FB90CB2BB}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F55EC1E5-B188-4B96-AC30-AC75A44DE683}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F55EC1E5-B188-4B96-AC30-AC75A44DE683}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F55EC1E5-B188-4B96-AC30-AC75A44DE683}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F55EC1E5-B188-4B96-AC30-AC75A44DE683}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7F90735B-2E8B-456E-A3FC-371E012CA5A9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7F90735B-2E8B-456E-A3FC-371E012CA5A9}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7F90735B-2E8B-456E-A3FC-371E012CA5A9}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7F90735B-2E8B-456E-A3FC-371E012CA5A9}.Release|Any CPU.Build.0 = Release|Any CPU
+		{AA36D610-8C03-434E-96FA-0EDE8ECB5067}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{AA36D610-8C03-434E-96FA-0EDE8ECB5067}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{AA36D610-8C03-434E-96FA-0EDE8ECB5067}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{AA36D610-8C03-434E-96FA-0EDE8ECB5067}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{F47F1E00-2FA5-4F93-A88B-25CFA9EA4806} = {9C2A980B-858C-4F0D-BF23-4F176789F020}
+		{522D501B-824F-4AA3-ABE5-745FB90CB2BB} = {9C2A980B-858C-4F0D-BF23-4F176789F020}
+		{F55EC1E5-B188-4B96-AC30-AC75A44DE683} = {9C2A980B-858C-4F0D-BF23-4F176789F020}
+		{7F90735B-2E8B-456E-A3FC-371E012CA5A9} = {9C2A980B-858C-4F0D-BF23-4F176789F020}
+		{AA36D610-8C03-434E-96FA-0EDE8ECB5067} = {1BB6DBB6-8489-48C2-AAC5-835CC79A6331}
+	EndGlobalSection
+EndGlobal
