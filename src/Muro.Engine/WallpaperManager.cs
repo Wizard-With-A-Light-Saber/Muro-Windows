@@ -21,17 +21,17 @@ internal sealed class WallpaperManager : IDisposable
 
     private readonly SystemEvents _events;
     private readonly Func<EngineConfig> _config;
-    private readonly Func<string, string?> _resolveVideo;
+    private readonly Func<EngineConfig.Assignment, LibraryResolver.Resolved?> _resolve;
     private readonly Dictionary<string, Slot> _slots = new();
     private DesktopHost.Target? _target;
     private HashSet<string>? _covered;
-    private nuint _reconcileTimer, _evaluateTimer, _confirmTimer, _heartbeat;
+    private nuint _reconcileTimer, _evaluateTimer, _confirmTimer, _retryTimer, _heartbeat;
 
-    public WallpaperManager(SystemEvents events, Func<EngineConfig> config, Func<string, string?> resolveVideo)
+    public WallpaperManager(SystemEvents events, Func<EngineConfig> config, Func<EngineConfig.Assignment, LibraryResolver.Resolved?> resolve)
     {
         _events = events;
         _config = config;
-        _resolveVideo = resolveVideo;
+        _resolve = resolve;
         events.DisplayChanged += () => { Log.Info("display change"); Debounce(ref _reconcileTimer, 500, Reconcile); };
         events.ShellRestarted += () => { RemoveAll(); _target = null; Debounce(ref _reconcileTimer, 1500, Reconcile); };
         events.StateChanged += () => Evaluate();
@@ -72,11 +72,13 @@ internal sealed class WallpaperManager : IDisposable
             Remove(gone);
         }
 
+        var missing = false;
         foreach (var monitor in monitors)
         {
             var assignment = config.AssignmentFor(monitor.Id);
-            var video = assignment is null ? null : _resolveVideo(assignment.WallpaperID);
-            if (assignment is null || video is null)
+            var resolved = assignment is null ? null : _resolve(assignment);
+            if (assignment is not null && resolved is null) missing = true;
+            if (assignment is null || resolved is not { } video)
             {
                 if (_slots.ContainsKey(monitor.Id)) Remove(monitor.Id);
                 continue;
@@ -90,9 +92,9 @@ internal sealed class WallpaperManager : IDisposable
                     slot.Window.Move((int)monitor.Bounds.X, (int)monitor.Bounds.Y, (int)monitor.Bounds.Width, (int)monitor.Bounds.Height);
                 }
                 slot.Monitor = monitor;
-                if (slot.Video != video || slot.Mode != assignment.Mode)
+                if (slot.Video != video.Path || slot.Mode != assignment.Mode)
                 {
-                    Log.Info($"{monitor.DeviceName}: now playing {Path.GetFileName(video)} ({assignment.Mode})");
+                    Log.Info($"{monitor.DeviceName}: now playing {Path.GetFileName(video.Path)} ({assignment.Mode})");
                     Apply(slot, video, assignment.Mode);
                 }
                 continue;
@@ -112,22 +114,28 @@ internal sealed class WallpaperManager : IDisposable
                 Log.Info($"could not start wallpaper on {monitor.DeviceName}: {ex.Message}");
             }
         }
+        // A wallpaper that cannot be found is usually a drive that is not connected. Look again later
+        // so it comes back by itself once the drive is plugged in.
+        if (missing) Debounce(ref _retryTimer, 15000, Reconcile);
         Evaluate();
     }
 
-    private static void Apply(Slot slot, string video, string mode)
+    private static void Apply(Slot slot, LibraryResolver.Resolved video, string mode)
     {
-        slot.Player.SetFpsCap(mode == "efficient" ? 30 : 0);
-        slot.Player.Load(video);
-        slot.Video = video;
+        // The 30 fps variant needs no filter; otherwise Efficient falls back to dropping frames at the player.
+        slot.Player.SetFpsCap(mode == "efficient" && !video.IsEfficientFile ? 30 : 0);
+        slot.Player.Load(video.Path);
+        slot.Video = video.Path;
         slot.Mode = mode;
     }
 
     private void Remove(string id)
     {
         if (!_slots.Remove(id, out var slot)) return;
+        Log.Info("removing wallpaper on " + slot.Monitor.DeviceName);
         slot.Player.Dispose();
         slot.Window.Dispose();
+        Log.Info("removed");
     }
 
     private void RemoveAll()

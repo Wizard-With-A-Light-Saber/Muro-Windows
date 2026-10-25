@@ -44,7 +44,7 @@ if (!fromDisk)
 
 using var events = new SystemEvents();
 Log.Info($"system: {events.State}");
-var manager = new WallpaperManager(events, () => config, id => File.Exists(id) ? id : null);
+var manager = new WallpaperManager(events, () => config, a => LibraryResolver.Resolve(AppPaths.Root, a));
 int cleaned = 0;
 void Cleanup()
 {
@@ -65,7 +65,12 @@ if (fromDisk)
 {
     // Pick up config changes written by the UI. Watcher threads only post work to the loop thread.
     var watcher = new FileSystemWatcher(AppPaths.Root, "config.json") { EnableRaisingEvents = true };
-    watcher.Changed += (_, _) => events.Post(() => { config = EngineConfig.Load(AppPaths.Root); manager.Reconcile(); });
+    // The config is saved by writing a temp file and renaming it over config.json, which raises
+    // Created or Renamed rather than Changed, so listen to all three.
+    void Reload() => events.Post(() => { Log.Info("config changed"); config = EngineConfig.Load(AppPaths.Root); manager.Reconcile(); });
+    watcher.Changed += (_, _) => Reload();
+    watcher.Created += (_, _) => Reload();
+    watcher.Renamed += (_, _) => Reload();
 }
 
 try

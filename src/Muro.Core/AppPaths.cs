@@ -4,8 +4,10 @@ namespace Muro.Core;
 /// so the library root can be moved later without touching the settings.
 public static class AppPaths
 {
-    public static string Root { get; } = Path.Combine(
-        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Muro");
+    /// MURO_HOME relocates everything (tests and trials use a throwaway library).
+    public static string Root { get; } = Environment.GetEnvironmentVariable("MURO_HOME") is { Length: > 0 } home
+        ? home
+        : Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Muro");
 
     public static string Logs => Path.Combine(Root, "logs");
 
