@@ -33,6 +33,6 @@ public sealed partial class MainWindow : Window
     private void OnNavChanged(NavigationView sender, NavigationViewSelectionChangedEventArgs args)
     {
         var tag = (args.SelectedItem as NavigationViewItem)?.Tag as string;
-        ContentFrame.Navigate(tag == "library" ? typeof(LibraryPage) : typeof(ExplorePage));
+        ContentFrame.Navigate(tag switch { "library" => typeof(LibraryPage), "schedules" => typeof(SchedulesPage), _ => typeof(ExplorePage) });
     }
 }

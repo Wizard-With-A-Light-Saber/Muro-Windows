@@ -17,3 +17,13 @@ internal static class Format
     public static string Resolution(int width, int height, double fps) =>
         width + "x" + height + "  " + (int)Math.Round(fps) + " fps";
 }
+
+/// Small append-only log for the app, next to the engine log. Never throws.
+internal static class AppLog
+{
+    public static void Info(string message)
+    {
+        try { File.AppendAllText(Path.Combine(Muro.Core.AppPaths.Logs, "app.log"), DateTime.Now.ToString("HH:mm:ss.fff") + " " + message + Environment.NewLine); }
+        catch { }
+    }
+}

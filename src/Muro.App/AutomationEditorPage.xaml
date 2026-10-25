@@ -1,0 +1,39 @@
+<Page x:Class="Muro.App.AutomationEditorPage"
+      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <ScrollViewer>
+        <StackPanel Padding="28,20,28,28" Spacing="14">
+            <Grid ColumnSpacing="12">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <TextBlock Text="Automation" Style="{StaticResource TitleTextBlockStyle}" VerticalAlignment="Center" />
+                <TextBox x:Name="NameBox" Grid.Column="1" PlaceholderText="Name" MaxWidth="360" HorizontalAlignment="Left" />
+                <Button x:Name="SaveButton" Grid.Column="2" Content="Save" Style="{StaticResource AccentButtonStyle}" Click="OnSave" />
+                <Button Grid.Column="3" Content="Cancel" Click="OnCancel" />
+            </Grid>
+
+            <InfoBar x:Name="Problem" Severity="Warning" IsOpen="False" IsClosable="True" />
+
+            <RadioButtons x:Name="ModeButtons" Header="How should it change wallpaper?" SelectionChanged="OnModeChanged">
+                <RadioButton Content="By timer: each wallpaper plays for its own length, then the next" />
+                <RadioButton Content="By the clock: each wallpaper has its own hours of the day" />
+            </RadioButtons>
+
+            <StackPanel x:Name="ClockPanel" Spacing="6" Visibility="Collapsed">
+                <TextBlock x:Name="ClockHelp" Opacity="0.75" TextWrapping="Wrap"
+                           Text="Drag the edge of a block to change its hours. Hours with no block keep whatever was playing." />
+                <ContentControl x:Name="TimelineHost" HorizontalContentAlignment="Stretch" />
+                <TextBlock x:Name="GapText" Opacity="0.75" />
+            </StackPanel>
+
+            <StackPanel x:Name="RowsHost" Spacing="8" />
+
+            <ComboBox x:Name="AddBox" Header="Add a wallpaper" PlaceholderText="Choose..." Width="340" SelectionChanged="OnAddChosen"
+                      DisplayMemberPath="Title" />
+        </StackPanel>
+    </ScrollViewer>
+</Page>

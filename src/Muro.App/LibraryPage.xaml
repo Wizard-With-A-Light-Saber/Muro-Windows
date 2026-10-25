@@ -64,9 +64,13 @@
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*" />
                                     <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="Auto" />
                                 </Grid.ColumnDefinitions>
                                 <Button Content="Apply" Style="{StaticResource AccentButtonStyle}" HorizontalAlignment="Stretch" Click="OnApplyClick" />
-                                <Button Grid.Column="1" Click="OnDeleteOne" ToolTipService.ToolTip="Delete" AutomationProperties.Name="Delete wallpaper">
+                                <Button Grid.Column="1" Click="OnPauseMenu" ToolTipService.ToolTip="Pause after for this wallpaper" AutomationProperties.Name="Pause after">
+                                    <FontIcon Glyph="&#xE713;" FontSize="14" />
+                                </Button>
+                                <Button Grid.Column="2" Click="OnDeleteOne" ToolTipService.ToolTip="Delete" AutomationProperties.Name="Delete wallpaper">
                                     <FontIcon Glyph="&#xE74D;" FontSize="14" />
                                 </Button>
                             </Grid>

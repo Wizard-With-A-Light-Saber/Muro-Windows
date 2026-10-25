@@ -1,0 +1,43 @@
+<Page x:Class="Muro.App.SchedulesPage"
+      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <ScrollViewer>
+        <StackPanel Padding="28,20,28,28" Spacing="16">
+            <TextBlock Text="Schedules" Style="{StaticResource TitleTextBlockStyle}" />
+
+            <InfoBar x:Name="RunningBar" Severity="Success" IsOpen="False" IsClosable="False">
+                <InfoBar.ActionButton>
+                    <Button Content="Stop" Click="OnStop" />
+                </InfoBar.ActionButton>
+            </InfoBar>
+
+            <Border Padding="16" CornerRadius="8" Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="1">
+                <StackPanel Spacing="10">
+                    <TextBlock Text="Pause after" FontWeight="SemiBold" />
+                    <TextBlock TextWrapping="Wrap" Opacity="0.75"
+                               Text="Let a wallpaper move for a while after it changes or after you unlock, then hold still on a frame. A held frame costs no CPU. A single wallpaper can override this from its menu in the Library." />
+                    <StackPanel Orientation="Horizontal" Spacing="16">
+                        <ComboBox x:Name="PauseAfterBox" Width="190" SelectionChanged="OnPauseAfterChanged" />
+                        <ToggleSwitch x:Name="ReplaySwitch" OnContent="Replay when the desktop is clear" OffContent="Replay when the desktop is clear" Toggled="OnReplayToggled" />
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+
+            <Grid>
+                <TextBlock Text="Playlists" Style="{StaticResource SubtitleTextBlockStyle}" VerticalAlignment="Center" />
+                <Button HorizontalAlignment="Right" Content="New playlist" Click="OnNewPlaylist" />
+            </Grid>
+            <TextBlock x:Name="NoPlaylists" Opacity="0.7" Text="No playlists yet. A playlist rotates through wallpapers on a timer, in order or shuffled." />
+            <StackPanel x:Name="PlaylistsHost" Spacing="8" />
+
+            <Grid>
+                <TextBlock Text="Automations" Style="{StaticResource SubtitleTextBlockStyle}" VerticalAlignment="Center" />
+                <Button HorizontalAlignment="Right" Content="New automation" Click="OnNewAutomation" />
+            </Grid>
+            <TextBlock x:Name="NoAutomations" Opacity="0.7" TextWrapping="Wrap"
+                       Text="No automations yet. Give each wallpaper its own length, or its own hours of the day on a 24-hour timeline." />
+            <StackPanel x:Name="AutomationsHost" Spacing="8" />
+        </StackPanel>
+    </ScrollViewer>
+</Page>

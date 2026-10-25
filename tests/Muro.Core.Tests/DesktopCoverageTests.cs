@@ -51,4 +51,17 @@ public class DesktopCoverageTests
         Assert.False(DesktopCoverage.Holds(null, true));
         Assert.True(DesktopCoverage.Holds(true, true));
     }
+
+    // ---- Replay on Clear Desktop (the rule that restarts Pause After)
+
+    [Fact]
+    public void ReplayOnClear_OnlyARealCoveredToClearChangeRestartsPauseAfter()
+    {
+        Assert.True(DesktopCoverage.RestartsPauseAfter(true, false, replayOnClearDesktop: true));
+        Assert.False(DesktopCoverage.RestartsPauseAfter(true, false, replayOnClearDesktop: false));   // switch off
+        Assert.False(DesktopCoverage.RestartsPauseAfter(null, false, true));    // the first reading is not the desktop clearing
+        Assert.False(DesktopCoverage.RestartsPauseAfter(false, false, true));   // a desktop that stays clear runs out and freezes
+        Assert.False(DesktopCoverage.RestartsPauseAfter(true, true, true));
+        Assert.False(DesktopCoverage.RestartsPauseAfter(false, true, true));    // becoming covered is not clearing
+    }
 }

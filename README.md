@@ -92,3 +92,47 @@ overrides mpv options for benchmarking. Engine decisions are logged to `%LOCALAP
 - The playlist and automation stores arrive in M4; deleting a wallpaper already calls a hook for them.
 - Previews still shutting down mpv from the UI thread is avoided; the engine disposes players synchronously and
   could be hardened the same way.
+
+## M4: playlists, automations, Pause After, crossfade
+
+**What exists**
+- **Playlists**: rotate on a timer (1 to 1440 minutes), in order or shuffled. Same JSON shape as the macOS app.
+- **Automations**: by timer (each wallpaper its own length, 10 s to 24 h) or by the clock (each wallpaper its own
+  hours, windows may run past midnight, gaps keep what was playing). Edited on the Schedules page; the clock mode
+  has a 24-hour timeline where you drag a block edge (snaps to 5 minutes; an edge shared with the next block
+  takes it along; no block can be squeezed under 15 minutes or pushed over another).
+- **Pause After**: global setting plus a per-wallpaper override (Library card, the gear button). Zero on a
+  wallpaper means never, which is different from having no value. **Replay when the desktop is clear** restarts
+  the clock each time the desktop clears.
+- **Crossfade**: a change of wallpaper dissolves over 0.6 s. The outgoing frame is held as a still in a layered
+  window above the new video, which fades once the new video has a frame.
+- Deleting a wallpaper first removes it from every playlist and automation (a clock window's hours go to the
+  window before it), stops any schedule left empty, and only then takes it off the desktop and deletes the files.
+- Everything runs in the engine, so schedules keep running with the app closed. A manual Apply from the app or
+  `muro set` stops the running schedule.
+
+**CLI**: `muro playlist ...`, `muro automation ...`, `muro schedule`, `muro pause-after ...` (see `muro --help`).
+
+**Measured on this PC** (Win11 build 26300)
+- Timer steps of 10 s switch on time; the running step is persisted in `schedule.json`.
+- Pause After 5 s froze the wallpaper at 5 s (log: `paused (PauseAfter)`); a wallpaper set to never kept playing.
+- Crossfade: screen luminance ramps 88 to 130 in about 16 steps over about 0.5 s; before it, it was a hard cut
+  (it never flashed black, since the old frame stays until the new one is ready).
+- Real mouse drag on the timeline: the 08:00 edge moved +155 minutes, both neighbours followed, Save wrote it.
+
+**Defaults I chose (nobody was available to ask; change any of them)**
+- Starting a schedule while nothing is on screen shows the first step at once; stopping a schedule restores what was
+  on the desktop before it started (if that wallpaper still exists).
+- A schedule drives every display, so per-display assignments give way to it while it runs.
+- A playlist that slept through several intervals advances once, not once per missed interval (as macOS).
+- A clock schedule started while nothing is playing and inside a gap shows the last window to end.
+- Timeline edges snap to 5 minutes; the timeline edits edges only. Reordering the list moves wallpapers between
+  slots (hours stay with the rows), as on macOS. Dragging a whole block is not built.
+- Block colours follow the position in the list.
+
+**Not done in M4 (with reasons)**
+- The **lock screen** and **screen saver** playlists run through the same scheduler and state file
+  (`schedule.json` already has a slot for each), but nothing applies them until M6.
+- The tray **play / replay** button that restarts Pause After is M5; the engine already has `Replay()`.
+- A stray `paused (Fullscreen)` appeared once while a heavy screenshot loop ran; it did not reproduce in a
+  controlled run and I could not find the cause.

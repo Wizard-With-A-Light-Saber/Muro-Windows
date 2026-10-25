@@ -126,6 +126,34 @@ public sealed partial class LibraryPage : Page
         Reload();
     }
 
+    // ---- Pause after, per wallpaper
+
+    private static readonly (string Label, int? Seconds)[] PauseChoices =
+    [
+        ("Follow the Schedules setting", null), ("Never pause this wallpaper", 0), ("After 10 seconds", 10), ("After 30 seconds", 30),
+        ("After 1 minute", 60), ("After 5 minutes", 300), ("After 15 minutes", 900), ("After 1 hour", 3600),
+    ];
+
+    /// A value of its own wins over the global setting, and zero means never, which is a decision and not
+    /// the same as having no value.
+    private void OnPauseMenu(object sender, RoutedEventArgs e)
+    {
+        if (VmOf(sender) is not { } vm) return;
+        var flyout = new MenuFlyout();
+        foreach (var (label, seconds) in PauseChoices)
+        {
+            var item = new ToggleMenuFlyoutItem { Text = label, IsChecked = vm.Entry.PauseAfterSeconds == seconds };
+            item.Click += (_, _) =>
+            {
+                if (Services.Library.Damaged) return;
+                LibraryWriter.Update(Services.Root, m => { if (m.Find(vm.Entry.Id) is { } entry) entry.PauseAfterSeconds = seconds; });
+                Reload();
+            };
+            flyout.Items.Add(item);
+        }
+        flyout.ShowAt((FrameworkElement)sender);
+    }
+
     private void OnStopClick(object sender, RoutedEventArgs e)
     {
         PlaybackService.StopAll();
