@@ -136,3 +136,19 @@ overrides mpv options for benchmarking. Engine decisions are logged to `%LOCALAP
 - The tray **play / replay** button that restarts Pause After is M5; the engine already has `Replay()`.
 - A stray `paused (Fullscreen)` appeared once while a heavy screenshot loop ran; it did not reproduce in a
   controlled run and I could not find the cause.
+
+**Checked through the real UI on this PC (throwaway library):** Play and Stop on a playlist (the engine starts
+by itself, takes over, and Stop puts the previous wallpaper back); dragging a block edge on the timeline,
+including the last block end at 24:00; the playlist editor dialog; saving an automation.
+
+**Not tested, please check:**
+- Building a *timer* automation from scratch in the editor (only the clock mode was exercised through the UI).
+- Creating a playlist from scratch in the dialog, and the Shuffle switch there.
+- The per-wallpaper Pause After menu (the gear button on a Library card); the same rule was tested from the CLI.
+- Pause After re-arming after an unlock (Win+L) or display wake, and "Replay when the desktop is clear" end to end.
+- Schedule catch-up after the PC sleeps and resumes, or after a clock or time-zone change.
+- A playlist rotating on its own across several intervals (only 1 and 10 second timer steps were run live).
+- Per-display behaviour of schedules on a second monitor.
+
+**"Drag blocks"** is built as dragging a block *edge* (and the list order). Dragging a whole block sideways is not
+built; say if you want it.

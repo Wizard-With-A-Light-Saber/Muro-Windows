@@ -137,13 +137,15 @@ internal sealed class DayTimeline : Canvas
             var step = _steps.FirstOrDefault(s => s.Id == element.StepId);
             if (step is null) continue;
             var allDay = Automation.IsAllDay(step);
-            var wraps = !allDay && step.End < step.Start;
+            // A window that ends at 24:00 is stored as ending at 00:00. That is the end of the day, not a wrap.
+            var endMinute = step.End == 0 ? 1440 : step.End;
+            var wraps = !allDay && step.End != 0 && step.End < step.Start;
             var color = Palette[Math.Max(0, _steps.IndexOf(step)) % Palette.Length];
             var selected = step.Id == SelectedId;
             var text = NameOf(step.WallpaperID) + "\n" + Automation.ClockLabel(step.Start) + " - " + Automation.ClockLabel(step.End);
             if (allDay) text = NameOf(step.WallpaperID) + "\nall day";
 
-            Place(element.Block, allDay ? 0 : step.Start, allDay ? 1440 : wraps ? 1440 : step.End);
+            Place(element.Block, allDay ? 0 : step.Start, allDay ? 1440 : wraps ? 1440 : endMinute);
             Place(element.Tail, 0, wraps ? step.End : 0);
             element.Tail.Visibility = wraps ? Visibility.Visible : Visibility.Collapsed;
             foreach (var block in new[] { element.Block, element.Tail })
@@ -161,7 +163,7 @@ internal sealed class DayTimeline : Canvas
             if (!allDay)
             {
                 PlaceHandle(element.Left, Pixels(step.Start));
-                PlaceHandle(element.Right, Pixels(wraps || step.End == 0 ? (wraps ? step.End : 1440) : step.End));
+                PlaceHandle(element.Right, Pixels(wraps ? step.End : endMinute));
             }
         }
 
@@ -213,8 +215,7 @@ internal sealed class DayTimeline : Canvas
         var step = _steps.FirstOrDefault(s => s.Id == stepId);
         if (step is null) return;
         _drag = (step, edge, e.GetCurrentPoint(this).Position.X, _steps.ToList());
-        var captured = ((UIElement)e.OriginalSource).CapturePointer(e.Pointer);
-        AppLog.Info("drag begin " + edge + " of " + stepId[..6] + " at x=" + _drag.Value.StartX + " captured=" + captured + " source=" + e.OriginalSource.GetType().Name);
+        ((UIElement)e.OriginalSource).CapturePointer(e.Pointer);
         SelectedId = stepId;
         SelectionChanged?.Invoke(stepId);
         e.Handled = true;
@@ -227,7 +228,6 @@ internal sealed class DayTimeline : Canvas
         var snapped = (int)Math.Round(minutes / SnapMinutes) * SnapMinutes;
         // Always from where the drag started, so repeated moves never accumulate rounding.
         _steps = Automation.MovingEdge(drag.Edge, drag.Step.Id, snapped, drag.Snapshot);
-        AppLog.Info("drag move minutes=" + minutes.ToString("0") + " snapped=" + snapped);
         Relayout();
         e.Handled = true;
     }
