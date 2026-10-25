@@ -54,4 +54,10 @@ public static class DesktopCoverage
     /// "Play only on desktop": hold a monitor's wallpaper while a window is open on it. A monitor
     /// nobody has looked at yet is never held.
     public static bool Holds(bool? isCovered, bool playOnlyOnDesktop) => playOnlyOnDesktop && isCovered == true;
+
+    /// Whether this reading makes Pause After count again. Only a real change from covered to clear does:
+    /// the first reading after a start is not the desktop clearing, and a desktop that simply stays clear
+    /// has to be allowed to run out and freeze.
+    public static bool RestartsPauseAfter(bool? wasCovered, bool? isCovered, bool replayOnClearDesktop) =>
+        replayOnClearDesktop && wasCovered == true && isCovered == false;
 }

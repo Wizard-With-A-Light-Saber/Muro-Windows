@@ -11,6 +11,8 @@ public enum PauseReason
     BatterySaver = 16,
     LowBattery = 32,
     DesktopCovered = 64,
+    /// Pause After froze this screen on a frame. Added by the engine, which owns the clock.
+    PauseAfter = 128,
 }
 
 /// What the machine is doing right now, as the platform layer reports it.

@@ -3,6 +3,7 @@ using Muro.Core;
 using Muro.Core.Catalog;
 using Muro.Core.Library;
 using Muro.Core.Media;
+using Muro.Core.Schedule;
 using Muro.Platform;
 
 namespace Muro.App;
@@ -218,6 +219,8 @@ internal static class PlaybackService
             config.PerDisplay.Clear();
         }
         config.Save(Services.Root);
+        // A manual choice ends the running schedule, or its next tick would overwrite it.
+        ScheduleControl.Stop(Services.Root, Surface.Desktop, restore: false);
         Services.Library.Reload();
         EngineLauncher.EnsureRunning();
     }

@@ -8,7 +8,7 @@ internal static class LibraryResolver
 {
     /// <paramref name="IsEfficientFile"/> is true when the file is the 30 fps variant, so the player
     /// needs no frame-rate filter on top.
-    public readonly record struct Resolved(string Path, bool IsEfficientFile);
+    public readonly record struct Resolved(string Path, bool IsEfficientFile, int? PauseAfterSeconds = null);
 
     public static Resolved? Resolve(string root, EngineConfig.Assignment assignment)
     {
@@ -21,12 +21,12 @@ internal static class LibraryResolver
         if (assignment.IsEfficient && entry.EfficientFile is { } variant)
         {
             var variantPath = LibraryManifest.Resolve(root, variant);
-            if (File.Exists(variantPath)) return new Resolved(variantPath, true);
+            if (File.Exists(variantPath)) return new Resolved(variantPath, true, entry.PauseAfterSeconds);
         }
 
         var master = LibraryManifest.Resolve(root, entry.File);
         // A missing master is a drive that is not connected (or a file removed outside Muro): report
         // nothing to play rather than hand the player a path that cannot open.
-        return File.Exists(master) ? new Resolved(master, false) : null;
+        return File.Exists(master) ? new Resolved(master, false, entry.PauseAfterSeconds) : null;
     }
 }

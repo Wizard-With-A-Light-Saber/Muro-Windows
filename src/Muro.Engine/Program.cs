@@ -49,9 +49,11 @@ using var events = new SystemEvents();
 Log.Info($"system: {events.State}");
 var manager = new WallpaperManager(events, () => config, a => LibraryResolver.Resolve(AppPaths.Root, a));
 int cleaned = 0;
+ScheduleRunner? runner = null;
 void Cleanup()
 {
     if (Interlocked.Exchange(ref cleaned, 1) == 1) return;
+    runner?.Dispose();
     manager.Dispose();
     events.Dispose();
     DesktopHost.RefreshWallpaper();
@@ -79,6 +81,12 @@ if (fromDisk)
 try
 {
     manager.Reconcile();
+    // Playlists and automations run here, in the engine, so they keep going with the app closed.
+    if (fromDisk)
+    {
+        runner = new ScheduleRunner(AppPaths.Root, events);
+        runner.Start();
+    }
     using var quitTimer = seconds > 0 ? new Timer(_ => MessageLoop.Quit(), null, seconds * 1000, Timeout.Infinite) : null;
     using var pauseTimer = pauseAfter > 0
         ? new Timer(_ => events.Post(() => { config.Paused = true; manager.Evaluate(); }), null, pauseAfter * 1000, Timeout.Infinite)

@@ -1,4 +1,5 @@
 using Muro.Core;
+using Muro.Core.Schedule;
 using Muro.Platform;
 using Muro.Playback;
 
@@ -17,6 +18,13 @@ internal sealed class WallpaperManager : IDisposable
         public required string Video;
         public required string Mode;
         public PauseReason Applied = PauseReason.None;
+        /// Every reason to hold except Pause After. Transitions are read from this, never from the final
+        /// reason, or the heartbeat would re-arm the clock it just fired.
+        public PauseReason Holds = PauseReason.None;
+        public bool Settled;
+        public nuint SettleTimer;
+        public int? WallpaperPauseAfter;
+        public bool? Covered;
     }
 
     private readonly SystemEvents _events;
@@ -26,6 +34,7 @@ internal sealed class WallpaperManager : IDisposable
     private DesktopHost.Target? _target;
     private HashSet<string>? _covered;
     private nuint _reconcileTimer, _evaluateTimer, _confirmTimer, _retryTimer, _heartbeat;
+    private int? _lastGlobalPauseAfter;
 
     public WallpaperManager(SystemEvents events, Func<EngineConfig> config, Func<EngineConfig.Assignment, LibraryResolver.Resolved?> resolve)
     {
@@ -92,6 +101,11 @@ internal sealed class WallpaperManager : IDisposable
                     slot.Window.Move((int)monitor.Bounds.X, (int)monitor.Bounds.Y, (int)monitor.Bounds.Width, (int)monitor.Bounds.Height);
                 }
                 slot.Monitor = monitor;
+                if (slot.WallpaperPauseAfter != video.PauseAfterSeconds)
+                {
+                    slot.WallpaperPauseAfter = video.PauseAfterSeconds;
+                    Arm(slot, evaluate: false);
+                }
                 if (slot.Video != video.Path || slot.Mode != assignment.Mode)
                 {
                     Log.Info($"{monitor.DeviceName}: now playing {Path.GetFileName(video.Path)} ({assignment.Mode})");
@@ -117,21 +131,31 @@ internal sealed class WallpaperManager : IDisposable
         // A wallpaper that cannot be found is usually a drive that is not connected. Look again later
         // so it comes back by itself once the drive is plugged in.
         if (missing) Debounce(ref _retryTimer, 15000, Reconcile);
+        // A new global Pause After value starts every clock again.
+        if (config.PauseAfterSeconds != _lastGlobalPauseAfter)
+        {
+            _lastGlobalPauseAfter = config.PauseAfterSeconds;
+            foreach (var slot in _slots.Values) Arm(slot, evaluate: false);
+        }
         Evaluate();
     }
 
-    private static void Apply(Slot slot, LibraryResolver.Resolved video, string mode)
+    private void Apply(Slot slot, LibraryResolver.Resolved video, string mode)
     {
         // The 30 fps variant needs no filter; otherwise Efficient falls back to dropping frames at the player.
         slot.Player.SetFpsCap(mode == "efficient" && !video.IsEfficientFile ? 30 : 0);
         slot.Player.Load(video.Path);
         slot.Video = video.Path;
         slot.Mode = mode;
+        // A new wallpaper is a new chance to watch it move, including every playlist and automation step.
+        slot.WallpaperPauseAfter = video.PauseAfterSeconds;
+        Arm(slot, evaluate: false);
     }
 
     private void Remove(string id)
     {
         if (!_slots.Remove(id, out var slot)) return;
+        _events.StopTimer(slot.SettleTimer);
         Log.Info("removing wallpaper on " + slot.Monitor.DeviceName);
         slot.Player.Dispose();
         slot.Window.Dispose();
@@ -168,12 +192,52 @@ internal sealed class WallpaperManager : IDisposable
         var fullscreen = ShellWindows.FullscreenMonitors(monitors, windows);
         foreach (var (id, slot) in _slots)
         {
-            var reason = PausePolicy.Decide(config, _events.State, fullscreen.Contains(id), report.Contains(id));
+            var covered = report.Contains(id);
+            var holds = PausePolicy.Decide(config, _events.State, fullscreen.Contains(id), covered);
+
+            // Pause After counts again whenever playback genuinely begins again: it resumes from any other
+            // hold (unlock, display wake, desktop clearing under Play only on desktop), or, with Replay on
+            // Clear Desktop, the desktop clears even when nothing was holding it.
+            var resumed = slot.Holds != PauseReason.None && holds == PauseReason.None;
+            var cleared = DesktopCoverage.RestartsPauseAfter(slot.Covered, covered, config.ReplayOnClearDesktop == true);
+            slot.Holds = holds;
+            slot.Covered = covered;
+            if (resumed || cleared) Arm(slot, evaluate: false);
+
+            var reason = holds | (slot.Settled ? PauseReason.PauseAfter : PauseReason.None);
             if (reason == slot.Applied) continue;
             slot.Player.Paused = reason != PauseReason.None;
-            Log.Info($"{slot.Monitor.DeviceName}: {(reason == PauseReason.None ? "playing" : "paused (" + reason + ")")}");
+            Log.Info(slot.Monitor.DeviceName + ": " + (reason == PauseReason.None ? "playing" : "paused (" + reason + ")"));
             slot.Applied = reason;
         }
+    }
+
+    /// Starts this screen Pause After clock again: it plays for the resolved time, then holds on a frame.
+    /// The per-wallpaper value wins over the global one, and zero on a wallpaper means never.
+    private void Arm(Slot slot, bool evaluate)
+    {
+        _events.StopTimer(slot.SettleTimer);
+        slot.SettleTimer = 0;
+        var wasSettled = slot.Settled;
+        slot.Settled = false;
+        if (PauseAfter.Resolve(slot.WallpaperPauseAfter, _config().PauseAfterSeconds) is { } seconds && slot.Holds == PauseReason.None)
+        {
+            slot.SettleTimer = _events.StartTimer(seconds * 1000, () =>
+            {
+                slot.SettleTimer = 0;
+                slot.Settled = true;
+                Evaluate();
+            });
+        }
+        if (wasSettled && evaluate) Evaluate();
+    }
+
+    /// Plays every screen again and starts its Pause After clock over: the tray play button while the
+    /// wallpapers rest.
+    public void Replay()
+    {
+        foreach (var slot in _slots.Values) Arm(slot, evaluate: false);
+        Evaluate();
     }
 
     private static string Describe(Rect r) => $"{r.Width}x{r.Height}@{r.X},{r.Y}";

@@ -1,7 +1,9 @@
+using Muro.Cli;
 using Muro.Core;
 using Muro.Core.Catalog;
 using Muro.Core.Library;
 using Muro.Core.Media;
+using Muro.Core.Schedule;
 using Muro.Platform;
 
 // muro: command line for the Muro library. The same code the app uses, so anything done here shows up
@@ -18,6 +20,7 @@ const string Usage = """
     muro folder [<path> | --default]                       show or move the download folder
     muro sweep                                             remove files no wallpaper uses
     muro encoders                                          show which video encoders work
+    (playlists, automations, schedules and pause-after: see muro playlist, automation, schedule, pause-after)
     """;
 
 if (args.Length == 0 || args[0] is "-h" or "--help") { Console.WriteLine(Usage); return 0; }
@@ -47,6 +50,7 @@ try
         "folder" => await FolderCommand(),
         "sweep" => Sweep(),
         "encoders" => await EncodersCommand(),
+        "playlist" or "automation" or "schedule" or "pause-after" => ScheduleCommands.Run(args, root),
         _ => Fail("Unknown command: " + args[0] + "\n\n" + Usage),
     };
 }
@@ -213,6 +217,7 @@ async Task<int> SetCommand()
         config.AllDisplays = new(entry.Id, mode);
     }
     config.Save(root);
+    ScheduleControl.Stop(root, Surface.Desktop, restore: false);
     Console.WriteLine("Playing " + entry.Title + " (" + mode + "). The engine picks it up on its own.");
     return 0;
 }

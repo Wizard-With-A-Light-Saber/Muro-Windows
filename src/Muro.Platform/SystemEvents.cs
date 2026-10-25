@@ -35,6 +35,10 @@ public sealed class SystemEvents : IDisposable
     public event Action? WindowActivity;
     /// Explorer restarted, so the desktop host window is gone.
     public event Action? ShellRestarted;
+    /// The PC woke from sleep or hibernation. Schedules re-evaluate here and not on every battery tick.
+    public event Action? Resumed;
+    /// The system clock or time zone changed.
+    public event Action? TimeChanged;
     /// A handler threw. The engine must outlive any single failing handler, so it is reported here.
     public event Action<Exception>? Error;
 
@@ -104,12 +108,16 @@ public sealed class SystemEvents : IDisposable
             case Native.WM_DISPLAYCHANGE:
                 DisplayChanged?.Invoke();
                 break;
+            case 0x001E:
+                TimeChanged?.Invoke();
+                break;
             case Native.WM_POWERBROADCAST:
                 // 0x8013 setting change, 0xA status change, 0x12 and 0x7 resume.
                 if ((int)wParam is 0x8013 or 0xA or 0x12 or 0x7)
                 {
                     if ((int)wParam == 0x8013) ReadDisplayState(lParam);
                     RefreshPower(notify: true);
+                    if ((int)wParam is 0x12 or 0x7) Resumed?.Invoke();
                 }
                 return 1;
             case Native.WM_WTSSESSION_CHANGE:
