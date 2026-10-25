@@ -74,4 +74,8 @@ internal static partial class Native
     [DllImport("user32")] public static extern bool KillTimer(nint hwnd, nuint id);
     [DllImport("user32", CharSet = CharSet.Unicode)] public static extern uint RegisterWindowMessage(string name);
     [DllImport("user32")] public static extern bool PostMessage(nint hwnd, uint msg, nint w, nint l);
+    [DllImport("user32", EntryPoint = "SetWindowLongPtrW")] public static extern nint SetWindowLongPtr(nint hwnd, int index, nint value);
+    [DllImport("user32")] public static extern nint CallWindowProc(nint previous, nint hwnd, uint msg, nint w, nint l);
+    [DllImport("user32")] public static extern bool ShowWindow(nint hwnd, int command);
+    [DllImport("user32")] public static extern bool SetForegroundWindow(nint hwnd);
 }

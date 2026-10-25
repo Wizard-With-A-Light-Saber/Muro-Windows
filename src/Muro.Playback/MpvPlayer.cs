@@ -10,7 +10,7 @@ public sealed class MpvPlayer : IDisposable
 {
     private nint _ctx;
 
-    public MpvPlayer(nint hostWindow, string? logFile = null)
+    public MpvPlayer(nint hostWindow, string? logFile = null, bool fill = true)
     {
         _ctx = MpvNative.mpv_create();
         if (_ctx == 0) throw new MpvException("mpv_create failed");
@@ -21,7 +21,7 @@ public sealed class MpvPlayer : IDisposable
         Opt("loop-file", "inf");
         Opt("aid", "no");
         Opt("keep-open", "yes");
-        Opt("panscan", "1.0");              // fill the monitor, crop instead of letterbox
+        Opt("panscan", fill ? "1.0" : "0.0");   // wallpapers fill the monitor and crop; a preview shows the whole picture
         Opt("input-default-bindings", "no");
         Opt("input-vo-keyboard", "no");
         Opt("osc", "no");

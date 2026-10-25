@@ -24,6 +24,9 @@ var seconds = int.TryParse(Opt("--seconds"), out var s) ? s : 0;
 var pauseAfter = int.TryParse(Opt("--test-pause-after"), out var pa) ? pa : 0;
 
 AppPaths.Ensure();
+// One engine per library. The app starts the engine on demand and must never start a second.
+using var singleInstance = new Mutex(true, "Muro.Engine." + Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(AppPaths.Root.ToLowerInvariant())))[..16], out var firstEngine);
+if (!firstEngine) { Console.Error.WriteLine("Muro engine is already running."); return 0; }
 var fromDisk = video is null && perMonitor.Count == 0;
 var config = fromDisk ? EngineConfig.Load(AppPaths.Root) : new EngineConfig();
 if (!fromDisk)

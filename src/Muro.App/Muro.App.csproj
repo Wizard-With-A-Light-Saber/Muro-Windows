@@ -1,0 +1,32 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows10.0.19041.0</TargetFramework>
+    <TargetPlatformMinVersion>10.0.19041.0</TargetPlatformMinVersion>
+    <RootNamespace>Muro.App</RootNamespace>
+    <AssemblyName>Muro</AssemblyName>
+    <UseWinUI>true</UseWinUI>
+    <WindowsPackageType>None</WindowsPackageType>
+    <WindowsAppSDKSelfContained>true</WindowsAppSDKSelfContained>
+    <SelfContained>true</SelfContained>
+    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+    <EnableMsixTooling>true</EnableMsixTooling>
+    <WindowsSdkPackageVersion>10.0.19041.38</WindowsSdkPackageVersion>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="Microsoft.WindowsAppSDK" Version="1.6.250108002" />
+    <PackageReference Include="Microsoft.Windows.SDK.BuildTools" Version="10.0.26100.1742" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Muro.Core\Muro.Core.csproj" />
+    <ProjectReference Include="..\Muro.Platform\Muro.Platform.csproj" />
+    <ProjectReference Include="..\Muro.Playback\Muro.Playback.csproj" />
+  </ItemGroup>
+  <ItemGroup Condition="Exists('..\..\third_party\mpv\libmpv-2.dll')">
+    <None Include="..\..\third_party\mpv\libmpv-2.dll" Link="libmpv-2.dll" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+  <ItemGroup Condition="Exists('..\..\third_party\ffmpeg\ffmpeg.exe')">
+    <None Include="..\..\third_party\ffmpeg\ffmpeg.exe" Link="ffmpeg\ffmpeg.exe" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+</Project>

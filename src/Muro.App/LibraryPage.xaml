@@ -1,0 +1,94 @@
+<Page x:Class="Muro.App.LibraryPage"
+      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      xmlns:local="using:Muro.App"
+      AllowDrop="True" DragOver="OnDragOver" Drop="OnDrop">
+    <Grid Padding="28,20,28,16" RowSpacing="12">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <StackPanel Orientation="Horizontal" Spacing="12">
+            <TextBlock Text="Library" Style="{StaticResource TitleTextBlockStyle}" VerticalAlignment="Center" Margin="0,0,12,0" />
+            <Button Click="OnImportClick">
+                <StackPanel Orientation="Horizontal" Spacing="8">
+                    <FontIcon Glyph="&#xE710;" FontSize="14" />
+                    <TextBlock Text="Import videos" />
+                </StackPanel>
+            </Button>
+            <ToggleButton x:Name="SelectToggle" Content="Select" Click="OnSelectToggle" />
+            <Button x:Name="DeleteSelectedButton" Content="Delete" Visibility="Collapsed" Click="OnDeleteSelected" />
+            <Button Content="Stop wallpaper" Click="OnStopClick" />
+            <TextBlock x:Name="SummaryText" VerticalAlignment="Center" Opacity="0.7" />
+        </StackPanel>
+
+        <StackPanel Grid.Row="1" Spacing="8">
+            <InfoBar x:Name="BusyBar" Severity="Informational" IsOpen="False" IsClosable="False">
+                <InfoBar.Content>
+                    <ProgressBar x:Name="BusyProgress" Maximum="100" Margin="0,0,0,12" />
+                </InfoBar.Content>
+                <InfoBar.ActionButton>
+                    <Button x:Name="BusyCancel" Content="Cancel" Click="OnBusyCancel" />
+                </InfoBar.ActionButton>
+            </InfoBar>
+            <InfoBar x:Name="MessageBar" IsOpen="False" />
+        </StackPanel>
+
+        <GridView x:Name="Grid" Grid.Row="2" SelectionMode="None" SelectionChanged="OnSelectionChanged">
+            <GridView.ItemTemplate>
+                <DataTemplate x:DataType="local:LibraryItemVm">
+                    <Grid Width="288" Margin="6" CornerRadius="10"
+                          Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                          BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="1">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+
+                        <Grid Height="162" Background="Black" CornerRadius="10,10,0,0" Tapped="OnPreview">
+                            <Image Source="{x:Bind Thumb}" Stretch="UniformToFill" />
+                            <Border HorizontalAlignment="Left" VerticalAlignment="Top" Margin="8" Padding="8,2" CornerRadius="4"
+                                    Background="{ThemeResource AccentFillColorDefaultBrush}" Visibility="{x:Bind PlayingVisibility, Mode=OneWay}">
+                                <TextBlock Text="PLAYING" FontSize="11" FontWeight="SemiBold" Foreground="White" />
+                            </Border>
+                        </Grid>
+
+                        <StackPanel Grid.Row="1" Padding="12,10,12,12" Spacing="2">
+                            <TextBlock Text="{x:Bind Title}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" />
+                            <TextBlock Text="{x:Bind Subtitle}" Opacity="0.7" FontSize="12" TextTrimming="CharacterEllipsis" />
+                            <TextBlock Text="{x:Bind SizeText}" Opacity="0.7" FontSize="12" TextTrimming="CharacterEllipsis" />
+                            <Grid Margin="0,8,0,0" ColumnSpacing="8">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <Button Content="Apply" Style="{StaticResource AccentButtonStyle}" HorizontalAlignment="Stretch" Click="OnApplyClick" />
+                                <Button Grid.Column="1" Click="OnDeleteOne" ToolTipService.ToolTip="Delete" AutomationProperties.Name="Delete wallpaper">
+                                    <FontIcon Glyph="&#xE74D;" FontSize="14" />
+                                </Button>
+                            </Grid>
+                        </StackPanel>
+                    </Grid>
+                </DataTemplate>
+            </GridView.ItemTemplate>
+        </GridView>
+
+        <TextBlock x:Name="EmptyText" Grid.Row="2" HorizontalAlignment="Center" VerticalAlignment="Center" Opacity="0.7"
+                   TextAlignment="Center" Visibility="Collapsed"
+                   Text="Your library is empty.&#x0A;Download wallpapers from Explore, or drop your own videos here." />
+
+        <Grid Grid.Row="3" ColumnSpacing="12">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+            <TextBlock x:Name="FolderText" VerticalAlignment="Center" Opacity="0.8" TextTrimming="CharacterEllipsis" />
+            <Button Grid.Column="1" Content="Change download folder" Click="OnChangeFolder" />
+            <Button Grid.Column="2" x:Name="ResetFolderButton" Content="Use default" Click="OnResetFolder" />
+        </Grid>
+    </Grid>
+</Page>

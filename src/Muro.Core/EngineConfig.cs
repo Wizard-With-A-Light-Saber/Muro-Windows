@@ -9,6 +9,7 @@ public sealed class EngineConfig
 {
     public sealed record Assignment(string WallpaperID, string Mode = "smooth")
     {
+        [JsonIgnore]
         public bool IsEfficient => Mode == "efficient";
     }
 

@@ -54,3 +54,41 @@ overrides mpv options for benchmarking. Engine decisions are logged to `%LOCALAP
 - Not testable on a one-monitor machine: a real second display and hot-plug (the resolution-change path
   exercises the same reconcile code). Not tested: Explorer restart, session lock, display sleep (no safe way to
   trigger them from a script).
+
+## M3: library, catalog, downloads, import (and the first UI)
+
+**The app** (`src/Muro.App`, WinUI 3, unpackaged, self-contained):
+- **Explore**: the official catalog (551 wallpapers today), search and category filter, NEW badges, download on
+  demand with progress and cancel, full-screen preview through Muro own mpv (streams the short 720p loop, or
+  plays the local file once downloaded). The catalog is fetched on launch and whenever the window comes to the
+  front. A blocked connection shows what is wrong, never an empty grid.
+- **Library**: thumbnails, Apply (all displays or one, Smooth or Efficient), single or multi-select delete with a
+  confirmation, drag-and-drop or file-picker import, total size, and the download-folder controls with a cancellable
+  progress dialog.
+- Apply starts the engine (`Muro.Engine`) if it is not running; the engine is a separate process and keeps
+  the wallpaper playing when the app is closed.
+
+**Command line** (`muro.exe`, same code as the app): `catalog`, `download`, `import`, `library`, `delete`, `set`,
+`clear`, `pause`, `resume`, `usage`, `folder`, `sweep`, `encoders`. Set `MURO_HOME` to use a throwaway library.
+
+**Behavior carried over from the macOS app**
+- library.json is edited only through `LibraryWriter` (in-process lock plus a lock file), and a damaged file is
+  never overwritten.
+- Delete order: off the desktop, then manifest, then files, then every list that points at it.
+- Orphan sweep spares anything younger than 15 minutes and anything hidden (partial downloads).
+- The download folder is a "Muro Wallpapers" folder with a marker file, joined to the library by a directory
+  junction (no admin rights needed). A folder Muro did not make is never used.
+- Importing the same file twice is recognised by a fingerprint of its size and first and last megabyte.
+
+**Findings on this machine**
+- Encoder detection does a real half-second test encode per candidate. Here Intel Quick Sync HEVC is chosen first;
+  SVT-AV1 is the software fallback (the LGPL ffmpeg build has no x264/x265).
+- The Efficient 30 fps copy takes 1080p60 from about 14% to about 8-10% of one core.
+- Full-screen preview costs about 10% of one core while it plays.
+
+**Not done / limits**
+- Moving the download folder first takes the wallpapers off screen and puts them back (Windows cannot delete an
+  open file). The macOS app also reacts to a drive being ejected; Windows safe-removal handling is not built yet.
+- The playlist and automation stores arrive in M4; deleting a wallpaper already calls a hook for them.
+- Previews still shutting down mpv from the UI thread is avoided; the engine disposes players synchronously and
+  could be hardened the same way.
