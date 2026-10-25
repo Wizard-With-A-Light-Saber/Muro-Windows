@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using Muro.Core;
 using Muro.Core.Schedule;
 using Muro.Platform;
@@ -25,7 +26,16 @@ internal sealed class WallpaperManager : IDisposable
         public nuint SettleTimer;
         public int? WallpaperPauseAfter;
         public bool? Covered;
+        // The crossfade: a still of the outgoing frame, held above the new video, then faded away.
+        public FadeOverlay? Overlay;
+        public nuint FadeTimer;
+        public Stopwatch? FadeClock;
+        public bool Fading;
     }
+
+    /// Short on purpose: long enough not to read as a cut, short enough that the old picture is rarely
+    /// kept for long. The same length the macOS app uses.
+    private const double FadeMilliseconds = 600;
 
     private readonly SystemEvents _events;
     private readonly Func<EngineConfig> _config;
@@ -109,7 +119,7 @@ internal sealed class WallpaperManager : IDisposable
                 if (slot.Video != video.Path || slot.Mode != assignment.Mode)
                 {
                     Log.Info($"{monitor.DeviceName}: now playing {Path.GetFileName(video.Path)} ({assignment.Mode})");
-                    Apply(slot, video, assignment.Mode);
+                    ChangeVideo(slot, video, assignment.Mode);
                 }
                 continue;
             }
@@ -152,9 +162,64 @@ internal sealed class WallpaperManager : IDisposable
         Arm(slot, evaluate: false);
     }
 
+    /// Switches a screen to another wallpaper without a cut: the outgoing frame is kept on screen as a still
+    /// until the new video has a frame of its own, then dissolves. Without a still (nothing rendered yet) it
+    /// is a plain switch, which never shows black either, since the old frame stays until the new one is ready.
+    private void ChangeVideo(Slot slot, LibraryResolver.Resolved video, string mode)
+    {
+        EndFade(slot);
+        FadeOverlay? overlay = null;
+        var still = Path.Combine(Path.GetTempPath(), "muro-fade-" + Guid.NewGuid().ToString("N") + ".jpg");
+        try
+        {
+            if (_target is { } target && slot.Player.TryScreenshot(still))
+            {
+                var b = slot.Monitor.Bounds;
+                overlay = new FadeOverlay(target, (int)b.X, (int)b.Y, (int)b.Width, (int)b.Height, still);
+            }
+        }
+        catch (Exception ex) { Log.Info("crossfade unavailable: " + ex.Message); }
+        finally { try { File.Delete(still); } catch { } }
+
+        Apply(slot, video, mode);
+        if (overlay is null) return;
+        slot.Overlay = overlay;
+        slot.Fading = false;
+        slot.FadeClock = Stopwatch.StartNew();
+        slot.FadeTimer = _events.StartTimer(30, () => StepFade(slot, video.Path), repeat: true);
+    }
+
+    private void StepFade(Slot slot, string path)
+    {
+        if (slot.Overlay is null || slot.FadeClock is null) { EndFade(slot); return; }
+        var elapsed = slot.FadeClock.ElapsedMilliseconds;
+        if (!slot.Fading)
+        {
+            // Hold the old picture until the new video has a frame up. Give up waiting after three seconds.
+            if (!slot.Player.IsShowing(path) && elapsed < 3000) return;
+            slot.Fading = true;
+            slot.FadeClock.Restart();
+            return;
+        }
+        var t = Math.Min(1.0, elapsed / FadeMilliseconds);
+        var eased = t * t * (3 - 2 * t);
+        slot.Overlay.SetAlpha((byte)Math.Round(255 * (1 - eased)));
+        if (t >= 1) EndFade(slot);
+    }
+
+    private void EndFade(Slot slot)
+    {
+        _events.StopTimer(slot.FadeTimer);
+        slot.FadeTimer = 0;
+        slot.Overlay?.Dispose();
+        slot.Overlay = null;
+        slot.Fading = false;
+    }
+
     private void Remove(string id)
     {
         if (!_slots.Remove(id, out var slot)) return;
+        EndFade(slot);
         _events.StopTimer(slot.SettleTimer);
         Log.Info("removing wallpaper on " + slot.Monitor.DeviceName);
         slot.Player.Dispose();

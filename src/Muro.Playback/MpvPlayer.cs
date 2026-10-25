@@ -25,6 +25,7 @@ public sealed class MpvPlayer : IDisposable
         Opt("input-default-bindings", "no");
         Opt("input-vo-keyboard", "no");
         Opt("osc", "no");
+        Opt("screenshot-format", "jpg"); Opt("screenshot-jpeg-quality", "90");
         Opt("osd-level", "0");
         Opt("cursor-autohide", "no");
         Opt("idle", "yes");
@@ -52,6 +53,18 @@ public sealed class MpvPlayer : IDisposable
         Check(MpvNative.mpv_set_option_string(_ctx, name, value), $"option {name}");
 
     public void Load(string path) => Command("loadfile", path, "replace");
+
+    /// Saves what the window is showing right now, at window size, for the crossfade. False when there is
+    /// nothing rendered to save (a hidden window, a video that has not started).
+    public bool TryScreenshot(string path)
+    {
+        try { Command("screenshot-to-file", path, "window"); return File.Exists(path); }
+        catch (MpvException) { return false; }
+    }
+
+    /// Whether this file is the one loaded and its first frame is up, so a fade can begin.
+    public bool IsShowing(string path) =>
+        GetString("path") == path && GetString("vo-configured") == "yes" && GetString("time-pos") is not null;
 
     public bool Paused
     {

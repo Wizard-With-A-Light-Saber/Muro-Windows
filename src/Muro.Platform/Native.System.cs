@@ -78,4 +78,20 @@ internal static partial class Native
     [DllImport("user32")] public static extern nint CallWindowProc(nint previous, nint hwnd, uint msg, nint w, nint l);
     [DllImport("user32")] public static extern bool ShowWindow(nint hwnd, int command);
     [DllImport("user32")] public static extern bool SetForegroundWindow(nint hwnd);
+    [DllImport("user32")] public static extern bool SetLayeredWindowAttributes(nint hwnd, uint colorKey, byte alpha, uint flags);
+    [DllImport("user32")] public static extern bool InvalidateRect(nint hwnd, nint rect, bool erase);
+    [DllImport("user32")] public static extern bool UpdateWindow(nint hwnd);
+    [DllImport("user32")] public static extern nint BeginPaint(nint hwnd, out PAINTSTRUCT paint);
+    [DllImport("user32")] public static extern bool EndPaint(nint hwnd, ref PAINTSTRUCT paint);
+    [DllImport("user32")] public static extern bool GetClientRect(nint hwnd, out RECT rect);
+
+    [StructLayout(LayoutKind.Sequential)]
+    public struct PAINTSTRUCT
+    {
+        public nint hdc;
+        public int fErase;
+        public RECT rcPaint;
+        public int fRestore, fIncUpdate;
+        [MarshalAs(UnmanagedType.ByValArray, SizeConst = 32)] public byte[] rgbReserved;
+    }
 }
