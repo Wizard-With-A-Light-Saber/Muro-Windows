@@ -2,7 +2,7 @@ using System.Runtime.InteropServices;
 
 namespace Muro.Platform;
 
-internal static class Native
+internal static partial class Native
 {
     public delegate nint WndProc(nint hwnd, uint msg, nint wParam, nint lParam);
     public delegate bool EnumWindowsProc(nint hwnd, nint lParam);
@@ -40,6 +40,7 @@ internal static class Native
     [DllImport("user32", CharSet = CharSet.Unicode)] public static extern int GetClassName(nint h, char[] buf, int max);
     [DllImport("user32")] public static extern bool GetWindowRect(nint h, out RECT r);
     [DllImport("user32")] public static extern bool IsWindowVisible(nint h);
+    [DllImport("user32")] public static extern bool IsWindow(nint h);
     [DllImport("user32")] public static extern nint GetParent(nint h);
     [DllImport("user32", CharSet = CharSet.Unicode)] public static extern ushort RegisterClassEx(ref WNDCLASSEX c);
     [DllImport("user32", CharSet = CharSet.Unicode)] public static extern nint CreateWindowEx(uint exStyle, string cls, string? title, uint style, int x, int y, int w, int h, nint parent, nint menu, nint inst, nint param);

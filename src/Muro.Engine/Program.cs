@@ -1,42 +1,80 @@
 using Muro.Core;
+using Muro.Engine;
 using Muro.Platform;
-using Muro.Playback;
 
-// M1 harness: Muro.Engine <video> [--seconds N] [--pause-after N]   |   Muro.Engine --dump
+// Engine harness. Until the library arrives in M3 a wallpaper id is simply a video file path.
+//   Muro.Engine <video> [--monitor N=<video>]... [--efficient] [--play-only-on-desktop]
+//               [--no-fullscreen-pause] [--low-battery N] [--seconds N] [--test-pause-after N]
+//   Muro.Engine --list-monitors | --dump
+//   Muro.Engine            (no video: runs whatever %LOCALAPPDATA%\Muro\config.json assigns)
 if (args.Contains("--dump")) { Console.WriteLine(DesktopHost.Dump()); return 0; }
-var video = args.FirstOrDefault(a => !a.StartsWith("--"));
-if (video is null || !File.Exists(video)) { Console.Error.WriteLine("usage: Muro.Engine <video> [--seconds N] | --dump"); return 2; }
-int pauseAfter = args.Contains("--pause-after") ? int.Parse(args[Array.IndexOf(args, "--pause-after") + 1]) : 0;
-int seconds = args.Contains("--seconds") ? int.Parse(args[Array.IndexOf(args, "--seconds") + 1]) : 0;
+if (args.Contains("--list-monitors"))
+{
+    var i = 1;
+    foreach (var m in Monitors.All())
+        Console.WriteLine($"{i++}: {m.DeviceName} {m.Bounds.Width}x{m.Bounds.Height}@{m.Bounds.X},{m.Bounds.Y} dpi={m.Dpi} primary={m.Primary}\n   id={m.Id}");
+    return 0;
+}
+
+string? Opt(string name) => args.Contains(name) ? args[Array.IndexOf(args, name) + 1] : null;
+var positional = args.Where((a, i) => !a.StartsWith("--") && (i == 0 || !new[] { "--seconds", "--low-battery", "--monitor", "--test-pause-after" }.Contains(args[i - 1]))).ToList();
+var video = positional.FirstOrDefault();
+var perMonitor = args.Select((a, i) => (a, i)).Where(t => t.a == "--monitor").Select(t => args[t.i + 1]).ToList();
+var seconds = int.TryParse(Opt("--seconds"), out var s) ? s : 0;
+var pauseAfter = int.TryParse(Opt("--test-pause-after"), out var pa) ? pa : 0;
 
 AppPaths.Ensure();
-var target = DesktopHost.Find() ?? throw new InvalidOperationException("desktop host window not found");
-Console.WriteLine($"layout={target.Layout} parent=0x{target.Parent:X}");
+var fromDisk = video is null && perMonitor.Count == 0;
+var config = fromDisk ? EngineConfig.Load(AppPaths.Root) : new EngineConfig();
+if (!fromDisk)
+{
+    var mode = args.Contains("--efficient") ? "efficient" : "smooth";
+    if (video is not null) config.AllDisplays = new(video, mode);
+    var monitors = Monitors.All();
+    foreach (var entry in perMonitor)
+    {
+        var eq = entry.IndexOf('=');
+        if (eq < 1 || !int.TryParse(entry[..eq], out var n) || n < 1 || n > monitors.Count) { Console.Error.WriteLine($"bad --monitor {entry}"); return 2; }
+        config.PerDisplay[monitors[n - 1].Id] = new(entry[(eq + 1)..], mode);
+    }
+    if (args.Contains("--play-only-on-desktop")) config.PlayOnlyOnDesktop = true;
+    if (args.Contains("--no-fullscreen-pause")) config.PauseOnFullscreen = false;
+    if (int.TryParse(Opt("--low-battery"), out var lb)) config.LowBatteryPercent = lb;
+}
 
-WallpaperWindow? window = null;
-MpvPlayer? player = null;
+using var events = new SystemEvents();
+Log.Info($"system: {events.State}");
+var manager = new WallpaperManager(events, () => config, id => File.Exists(id) ? id : null);
 int cleaned = 0;
 void Cleanup()
 {
     if (Interlocked.Exchange(ref cleaned, 1) == 1) return;
-    player?.Dispose();
-    window?.Dispose();
+    manager.Dispose();
+    events.Dispose();
     DesktopHost.RefreshWallpaper();
 }
 
-// Crash safety: normal exit, Ctrl+C and unhandled exceptions all restore the desktop.
+// Crash safety: normal exit, Ctrl+C and unhandled exceptions all restore the desktop. A hard kill
+// needs no handler: Windows destroys the process windows and the shell repaints the user wallpaper.
 AppDomain.CurrentDomain.ProcessExit += (_, _) => Cleanup();
-AppDomain.CurrentDomain.UnhandledException += (_, _) => Cleanup();
+AppDomain.CurrentDomain.UnhandledException += (_, e) => { Log.Info($"fatal: {e.ExceptionObject}"); Cleanup(); };
+events.Error += ex => Log.Info($"error: {ex}");
 Console.CancelKeyPress += (_, e) => { e.Cancel = true; MessageLoop.Quit(); };
+
+if (fromDisk)
+{
+    // Pick up config changes written by the UI. Watcher threads only post work to the loop thread.
+    var watcher = new FileSystemWatcher(AppPaths.Root, "config.json") { EnableRaisingEvents = true };
+    watcher.Changed += (_, _) => events.Post(() => { config = EngineConfig.Load(AppPaths.Root); manager.Reconcile(); });
+}
 
 try
 {
-    var (x, y, w, h) = DesktopHost.PrimaryMonitor();
-    window = new WallpaperWindow(target, x, y, w, h);
-    player = new MpvPlayer(window.Handle, Path.Combine(AppPaths.Logs, "mpv.log"));
-    player.Load(video);
+    manager.Reconcile();
     using var quitTimer = seconds > 0 ? new Timer(_ => MessageLoop.Quit(), null, seconds * 1000, Timeout.Infinite) : null;
-    using var pauseTimer = pauseAfter > 0 ? new Timer(_ => player.Paused = true, null, pauseAfter * 1000, Timeout.Infinite) : null;
+    using var pauseTimer = pauseAfter > 0
+        ? new Timer(_ => events.Post(() => { config.Paused = true; manager.Evaluate(); }), null, pauseAfter * 1000, Timeout.Infinite)
+        : null;
     MessageLoop.Run();
 }
 finally { Cleanup(); }

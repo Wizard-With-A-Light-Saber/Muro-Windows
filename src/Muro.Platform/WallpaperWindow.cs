@@ -39,6 +39,25 @@ public sealed class WallpaperWindow : IDisposable
         _registered = true;
     }
 
+    /// Moves and resizes to a new monitor rectangle (virtual-desktop pixels). mpv's own child
+    /// window does not follow its parent, so it is resized by hand.
+    public void Move(int x, int y, int width, int height)
+    {
+        if (Handle == 0) return;
+        var origin = new Native.POINT { X = x, Y = y };
+        Native.ScreenToClient(_target.Parent, ref origin);
+        Native.SetWindowPos(Handle, Native.HWND_BOTTOM, origin.X, origin.Y, width, height, Native.SWP_NOACTIVATE);
+        Native.EnumChildWindows(Handle, (child, _) =>
+        {
+            Native.SetWindowPos(child, 0, 0, 0, width, height, Native.SWP_NOACTIVATE | Native.SWP_NOZORDER);
+            return true;
+        }, 0);
+    }
+
+    /// False once the shell has recreated its wallpaper layer (resolution change, Explorer restart):
+    /// the old parent is gone and our window went with it.
+    public bool IsAlive => Handle != 0 && Native.IsWindow(Handle) && Native.GetParent(Handle) == _target.Parent;
+
     public void Dispose()
     {
         if (Handle == 0) return;

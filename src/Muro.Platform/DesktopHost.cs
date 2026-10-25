@@ -13,19 +13,28 @@ public static class DesktopHost
 
     public sealed record Target(nint Parent, Layout Layout);
 
+    /// Looks for the host window first and only asks the shell to create one when it is missing.
+    /// Sending 0x052C again makes the shell spawn a fresh WorkerW and discard the old one, which
+    /// takes any wallpaper window parented to it along.
     public static Target? Find()
     {
         var progman = Native.FindWindow("Progman", null);
         if (progman == 0) return null;
+        var found = Lookup(progman);
+        if (found is not null) return found;
 
         // 0xD/1 is the variant that also works on 24H2; plain 0/0 is what older shells expect.
         Native.SendMessageTimeout(progman, 0x052C, 0xD, 0x1, Native.SMTO_NORMAL, 1000, out _);
         Native.SendMessageTimeout(progman, 0x052C, 0, 0, Native.SMTO_NORMAL, 1000, out _);
+        return Lookup(progman);
+    }
 
+    private static Target? Lookup(nint progman)
+    {
         if (Native.FindWindowEx(progman, 0, "SHELLDLL_DefView", null) != 0)
         {
             var layer = Native.FindWindowEx(progman, 0, "WorkerW", null);
-            return new Target(layer != 0 ? layer : progman, Layout.ProgmanChild);
+            return layer != 0 ? new Target(layer, Layout.ProgmanChild) : null;
         }
 
         nint worker = 0;
