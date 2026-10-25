@@ -14,15 +14,19 @@ dotnet build Muro.sln -c Release
 dotnet test tests/Muro.Core.Tests -c Release
 ```
 
-## M1 harness
+## Engine harness (until the UI exists)
 
 ```powershell
-src\Muro.Engine\bin\Release\net8.0-windows10.0.19041.0\Muro.Engine.exe <video.mov> [--seconds N] [--pause-after N]
-Muro.Engine.exe --dump     # prints the Progman/WorkerW window tree
+Muro.Engine.exe <video> [--monitor N=<video>]... [--efficient] [--play-only-on-desktop]
+                [--no-fullscreen-pause] [--low-battery N] [--seconds N] [--test-pause-after N]
+Muro.Engine.exe                 # no video: follows %LOCALAPPDATA%\Muro\config.json (hot-reloaded)
+Muro.Engine.exe --list-monitors # monitor index, size, DPI, stable id
+Muro.Engine.exe --dump          # prints the Progman/WorkerW window tree
 ```
 
-Ctrl+C or `--seconds` exits and restores the desktop. `MURO_MPV_LOG=1` writes `%LOCALAPPDATA%\Muro\logs\mpv.log`;
-`MURO_MPV_OPTS="k=v,k=v"` overrides mpv options for benchmarking.
+Until the library lands (M3) a wallpaper id is simply a video file path. Ctrl+C or `--seconds` exits and
+restores the desktop. `MURO_MPV_LOG=1` writes `%LOCALAPPDATA%\Muro\logs\mpv.log`; `MURO_MPV_OPTS="k=v,k=v"`
+overrides mpv options for benchmarking. Engine decisions are logged to `%LOCALAPPDATA%\Muro\logs\engine.log`.
 
 ## M1 findings (Win11 build 26300, Intel Iris Xe, 8 logical CPUs)
 
