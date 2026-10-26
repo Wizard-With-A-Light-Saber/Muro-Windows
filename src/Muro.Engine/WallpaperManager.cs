@@ -46,6 +46,7 @@ internal sealed class WallpaperManager : IDisposable
     private HashSet<string>? _covered;
     private nuint _reconcileTimer, _evaluateTimer, _confirmTimer, _retryTimer, _heartbeat;
     private int? _lastGlobalPauseAfter;
+    private string _lastFullscreen = "";
 
     public WallpaperManager(SystemEvents events, Func<EngineConfig> config, Func<EngineConfig.Assignment, LibraryResolver.Resolved?> resolve)
     {
@@ -263,10 +264,16 @@ internal sealed class WallpaperManager : IDisposable
         if (needsConfirmation) Debounce(ref _confirmTimer, 400, () => Evaluate(confirming: true));
 
         var fullscreen = ShellWindows.FullscreenMonitors(monitors, windows);
+        var why = string.Join("; ", fullscreen.Select(kv => (_slots.TryGetValue(kv.Key, out var s) ? s.Monitor.DeviceName : kv.Key) + ": " + kv.Value));
+        if (why != _lastFullscreen)
+        {
+            _lastFullscreen = why;
+            Log.Info("full screen: " + (why.Length == 0 ? "none" : why));
+        }
         foreach (var (id, slot) in _slots)
         {
             var covered = report.Contains(id);
-            var holds = PausePolicy.Decide(config, _events.State, fullscreen.Contains(id), covered);
+            var holds = PausePolicy.Decide(config, _events.State, fullscreen.ContainsKey(id), covered);
 
             // Pause After counts again whenever playback genuinely begins again: it resumes from any other
             // hold (unlock, display wake, desktop clearing under Play only on desktop), or, with Replay on

@@ -348,3 +348,9 @@ shortcut, leaving no Run or screen saver entry.
   froze that display, while a partly covered desktop kept playing. The busy state is now ignored when the focused
   window is the desktop or the taskbar. A real full-screen window still pauses and resumes (checked live).
 - A wallpaper's own Pause After (Library card, gear) now takes effect at once; the engine did not watch `library.json`.
+- **Full screen on one display froze the other.** Windows' "busy" state is system-wide, and the engine blamed whatever
+  window was in front, so working on Display 1 while a game or video was full screen on Display 2 paused Display 1
+  too. The state now only counts when the window in front fills its own monitor. The engine logs why it thinks a
+  display is covered (`full screen: <display>: window '<title>' [<class>]`) to make any report easy to trace.
+  Checked live: a full-screen window on Display 2 paused only Display 2, a click on Display 1's bare desktop paused
+  nothing, and closing the window resumed Display 2.
