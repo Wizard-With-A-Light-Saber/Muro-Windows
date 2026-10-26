@@ -1,0 +1,61 @@
+# Builds, tests and packages Muro for Windows. A tag like v0.1.0 also publishes a GitHub release with the zip
+# and the installer, which is what the app's update check looks for (a release with a Windows asset).
+# This file sits at the root of the Windows/ repo; if that folder moves into another repo, move this to the
+# repo's .github/workflows and add `defaults: run: working-directory: Windows`.
+name: windows
+
+on:
+  push:
+    branches: [main]
+    tags: ['v*']
+  pull_request:
+
+jobs:
+  build:
+    runs-on: windows-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+
+      - name: Native dependencies (libmpv, ffmpeg)
+        shell: pwsh
+        run: ./scripts/fetch-native.ps1
+
+      - name: Build
+        run: dotnet build Muro.sln -c Release
+
+      - name: Test
+        run: dotnet test tests/Muro.Core.Tests -c Release --no-build
+
+      - name: Package
+        shell: pwsh
+        run: ./scripts/publish.ps1
+
+      - name: The tag must match the version in Directory.Build.props
+        if: startsWith(github.ref, 'refs/tags/v')
+        shell: pwsh
+        run: |
+          $version = ([xml](Get-Content Directory.Build.props)).Project.PropertyGroup.Version | Select-Object -First 1
+          if ('${{ github.ref_name }}' -ne "v$version") { throw "Tag ${{ github.ref_name }} does not match version $version" }
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: muro-windows
+          path: |
+            dist/*.zip
+            dist/*.exe
+            dist/SHA256SUMS.txt
+
+      - name: Release
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            dist/*.zip
+            dist/*.exe
+            dist/SHA256SUMS.txt

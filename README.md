@@ -293,3 +293,50 @@ built; say if you want it.
 - The Settings button in Windows' screen saver dialog, and *Try it now* from the app.
 - `muro` has no `--on screensaver|lockscreen` switch yet: the screen saver and lock screen are set from Settings.
 - Installed layout: `Muro.scr` and the engine's ffmpeg lookup are only exercised in the development tree (M7).
+
+## M7: package, installer, CI
+
+**What exists**
+- `scripts/publish.ps1` builds `dist/`: the install folder `dist/Muro/`, **`Muro-<version>-win-x64.zip`** (unzip anywhere
+  and run `Muro.exe`), **`Muro-Setup-<version>.exe`** (per-user installer, no admin rights) and `SHA256SUMS.txt`.
+  The version comes from `Directory.Build.props` (0.1.0). The two names are what the app's update check needs:
+  an `.exe`, or a `.zip` containing `win`.
+- One flat folder with one shared .NET and Windows App SDK runtime (about 350 MB installed, 99 MB installer):
+  `Muro.exe` (app), `Muro.Engine.exe`, `Muro.scr`, `libmpv-2.dll`, `ffmpeg\ffmpeg.exe`, `licenses\`. Nothing
+  needs to be installed first. The command-line tool `muro.exe` is not in the package (it is a development tool;
+  its name would also clash with `Muro.exe` on Windows).
+- The installer: installs to `%LOCALAPPDATA%\Programs\Muro`, a Start menu shortcut, optional desktop shortcut,
+  optional **Start with Windows** (the same Run entry Settings writes), stops a running Muro and engine first so an
+  update can replace them, and on uninstall removes the Run entry and a screen saver entry that still points at
+  `Muro.scr`. Your library and settings in `%LOCALAPPDATA%\Muro` are left alone.
+- `.github/workflows/windows.yml`: build, test and package on every push and pull request. A tag such as `v0.1.0`
+  (which must equal the version in `Directory.Build.props`) also publishes a GitHub release with the zip, the
+  installer and the checksums, which is what makes the app offer the update.
+- `scripts/fetch-installer-tools.ps1` downloads the Inno Setup compiler (6.4.3, from NuGet, no installation) into
+  `third_party/inno`.
+
+**Checked on this PC:** the whole package built from scratch (about 4 minutes); the installer ran silently into a
+scratch folder; the installed `Muro.exe` ran against a throwaway library, applying a wallpaper started the engine
+from the installed folder, Start with Windows recorded the installed engine path (then removed), the installed
+`Muro.scr` played and ended on input, and the uninstaller removed the folder, the uninstall entry and the
+shortcut, leaving no Run or screen saver entry.
+
+**Defaults I chose / limits**
+- **Unsigned.** Windows SmartScreen will warn ("unknown publisher") on the installer and the exe. A code signing
+  certificate fixes that; signing is one extra step in `publish.ps1` and the workflow.
+- Uninstalling while Muro is the screen saver clears the entry rather than restoring the old program (that backup
+  lives in Muro's settings): turn it off in Settings first. A lock screen picture from Muro stays until you turn
+  it off in Settings too.
+- The installer stops Muro with `taskkill`, so an update briefly drops the wallpaper; restart Muro afterwards (or
+  sign in again if it starts with Windows).
+- The workflow file is at the root of this repo. If `Windows/` moves into the main Muro repository, the file must
+  go to that repository's `.github/workflows` with `working-directory: Windows`.
+- Windows 10 and 11 (x64) only; ARM64 is not built.
+
+**Not tested, please check:**
+- The GitHub workflow itself (I cannot run Actions from here; the steps are the ones I ran by hand, and the YAML
+  parses). The first run may need a tweak, for example `windows-latest` having a different .NET SDK than 8.0.100.
+- A clean PC with no .NET or Windows App SDK (everything is bundled, but this PC has both).
+- Updating over an existing install while Muro is running (the stop step is written, not exercised), and the
+  installer's *Start with Windows* and *desktop shortcut* options (I only ran the defaults).
+- Windows 10, and 4K or high-DPI scaling of the installer wizard.
