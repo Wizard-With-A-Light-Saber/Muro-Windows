@@ -1,8 +1,8 @@
-# Builds assets/muro.ico from the macOS app icon (Muro/Icon/AppIcon.icns): takes the largest PNG
-# inside the .icns and writes PNG-compressed icon images at 16 to 256 px.
-# Usage: pwsh scripts/make-icon.ps1 [-Icns <path>] [-Out <path>]
+# Builds Windows/assets/muro.ico from the icon image in the repository's assets folder (assets/icon.png), as
+# PNG-compressed icon images at 16 to 256 px. A macOS .icns is accepted too (-Source Muro/Icon/AppIcon.icns).
+# Usage: pwsh scripts/make-icon.ps1 [-Source <png or icns>] [-Out <path>]
 param(
-    [string]$Icns = (Join-Path $PSScriptRoot '..\..\Muro\Icon\AppIcon.icns'),
+    [string]$Source = (Join-Path $PSScriptRoot '..\..\assets\icon.png'),
     [string]$Out = (Join-Path $PSScriptRoot '..\assets\muro.ico')
 )
 Add-Type -AssemblyName System.Drawing
@@ -10,27 +10,31 @@ Add-Type -AssemblyName System.Drawing
 # [int] casts matter: -shl on a [byte] stays a byte and silently truncates.
 function ReadBE([byte[]]$b, [int]$at) { ([int]$b[$at] -shl 24) -bor ([int]$b[$at + 1] -shl 16) -bor ([int]$b[$at + 2] -shl 8) -bor [int]$b[$at + 3] }
 
-$bytes = [IO.File]::ReadAllBytes($Icns)
-$best = $null
-$pos = 8
-while ($pos + 8 -le $bytes.Length) {
-    $len = ReadBE $bytes ($pos + 4)
-    if ($len -lt 8) { break }
-    $isPng = $len -gt 16 -and $bytes[$pos + 8] -eq 0x89 -and $bytes[$pos + 9] -eq 0x50
-    if ($isPng -and ($null -eq $best -or $len -gt $best.Length)) {
-        $best = New-Object byte[] ($len - 8)
-        [Array]::Copy($bytes, $pos + 8, $best, 0, $len - 8)
+$bytes = [IO.File]::ReadAllBytes($Source)
+if ([IO.Path]::GetExtension($Source) -ieq '.icns') {
+    # Take the largest PNG inside the .icns.
+    $best = $null
+    $pos = 8
+    while ($pos + 8 -le $bytes.Length) {
+        $len = ReadBE $bytes ($pos + 4)
+        if ($len -lt 8) { break }
+        $isPng = $len -gt 16 -and $bytes[$pos + 8] -eq 0x89 -and $bytes[$pos + 9] -eq 0x50
+        if ($isPng -and ($null -eq $best -or $len -gt $best.Length)) {
+            $best = New-Object byte[] ($len - 8)
+            [Array]::Copy($bytes, $pos + 8, $best, 0, $len - 8)
+        }
+        $pos += $len
     }
-    $pos += $len
+    if ($null -eq $best) { throw "no PNG image found in $Source" }
+    $bytes = $best
 }
-if ($null -eq $best) { throw "no PNG image found in $Icns" }
 
-$source = [Drawing.Image]::FromStream((New-Object IO.MemoryStream (, $best)))
+$picture = [Drawing.Image]::FromStream((New-Object IO.MemoryStream (, $bytes)))
 $images = foreach ($size in 16, 24, 32, 48, 64, 128, 256) {
     $bmp = New-Object Drawing.Bitmap $size, $size
     $g = [Drawing.Graphics]::FromImage($bmp)
     $g.InterpolationMode = 'HighQualityBicubic'; $g.SmoothingMode = 'HighQuality'; $g.PixelOffsetMode = 'HighQuality'
-    $g.DrawImage($source, 0, 0, $size, $size); $g.Dispose()
+    $g.DrawImage($picture, 0, 0, $size, $size); $g.Dispose()
     $ms = New-Object IO.MemoryStream
     $bmp.Save($ms, [Drawing.Imaging.ImageFormat]::Png); $bmp.Dispose()
     [pscustomobject]@{ Size = $size; Data = $ms.ToArray() }

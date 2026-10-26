@@ -200,7 +200,7 @@ built; say if you want it.
   writes that file too. UI-only choices (default quality, banner choice, today's Pick, the seen release) are in
   `app-settings.json`. An older Muro build left a `settings.json` in `%LOCALAPPDATA%\Muro` (different fields):
   Muro does not read or write it.
-- The window icon and tray icon are made from the macOS app icon by `scripts/make-icon.ps1`.
+- The window icon and tray icon are made from `assets/icon.png` in the repository root by `scripts/make-icon.ps1`.
 - **A busy or damaged `config.json` is never overwritten.** Reading is tried a few times first (a virus scanner or
   the engine's own file watcher may hold the file for a moment); if it still cannot be read, `Save` refuses
   instead of writing defaults over your wallpaper assignment, and Settings says the setting was not saved. Writes
