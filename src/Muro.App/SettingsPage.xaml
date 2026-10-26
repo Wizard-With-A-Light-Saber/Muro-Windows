@@ -72,7 +72,7 @@
                         <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
                         <StackPanel>
                             <TextBlock Text="Default quality" />
-                            <TextBlock Style="{StaticResource Hint}" Text="How a wallpaper plays when you apply it from Featured. Efficient caps at 30 fps for lower CPU." />
+                            <TextBlock Style="{StaticResource Hint}" Text="How a wallpaper plays when you apply it from Featured, in a playlist or on the screen saver. Automatic uses a 30 fps copy (about a third of the CPU) only for the heaviest wallpapers, 4K at 50 fps or more; Smooth and Efficient apply to all." />
                         </StackPanel>
                         <ComboBox x:Name="QualityBox" Grid.Column="1" Width="130" SelectionChanged="OnQualityChanged" />
                     </Grid>

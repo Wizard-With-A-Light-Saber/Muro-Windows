@@ -1,5 +1,6 @@
 using Muro.Core;
 using Muro.Core.Library;
+using Muro.Core.Media;
 using Muro.Core.Schedule;
 using Muro.Platform;
 
@@ -132,21 +133,45 @@ internal sealed class ScheduleRunner : IDisposable
         // Only this surface's assignment: a load-modify-save, so the energy settings the UI wrote are kept.
         // A desktop schedule drives every display, so per-display overrides give way to it.
         var config = EngineConfig.Load(_root);
+        // Each step gets the mode the default setting gives that wallpaper: Automatic puts only the heaviest ones
+        // (4K at 50 fps or more) on the 30 fps copy, so a playlist moves between modes as it moves between wallpapers.
+        var entry = LibraryManifest.Load(_root).Find(id);
+        var mode = AppSettings.Load(_root).ModeFor(entry);
+        if (mode == PlaybackMode.Efficient && _surface != Surface.LockScreen && entry is not null) EnsureVariant(entry);
         switch (_surface)
         {
             case Surface.ScreenSaver:
-                config.ScreenSaver = new EngineConfig.Assignment(id, config.ScreenSaver?.Mode ?? "smooth");
+                config.ScreenSaver = new EngineConfig.Assignment(id, mode);
                 break;
             case Surface.LockScreen:
                 config.LockScreen = new EngineConfig.Assignment(id);
                 break;
             default:
-                config.AllDisplays = new EngineConfig.Assignment(id, config.AllDisplays?.Mode ?? "smooth");
+                config.AllDisplays = new EngineConfig.Assignment(id, mode);
                 config.PerDisplay.Clear();
                 break;
         }
         config.Save(_root);
         Log.Info($"schedule ({_surface}): now showing {id}");
+    }
+
+    private static readonly HashSet<string> MakingVariant = [];
+
+    /// A wallpaper that should play as the 30 fps copy but has none yet: make it in the background. Until it is
+    /// ready the wallpaper plays with the frame rate capped at the player; when the copy is written the engine
+    /// notices library.json and switches to it.
+    private static void EnsureVariant(WallpaperEntry entry)
+    {
+        if (entry.EfficientFile is not null || entry.Fps <= EfficientVariant.MinimumFps || Ffmpeg.Locate() is not { } ffmpeg) return;
+        lock (MakingVariant) { if (!MakingVariant.Add(entry.Id)) return; }
+        Log.Info($"making the 30 fps copy of {entry.Title}");
+        var root = AppPaths.Root;
+        Task.Run(async () =>
+        {
+            try { await EfficientVariant.EnsureAsync(ffmpeg, root, entry.Id); Log.Info($"30 fps copy of {entry.Title} ready"); }
+            catch (Exception ex) { Log.Info($"30 fps copy of {entry.Title} failed: {ex.Message}"); }
+            finally { lock (MakingVariant) MakingVariant.Remove(entry.Id); }
+        });
     }
 
     /// Writes where the schedule is, keeping what was showing before it started. Skipped when nothing

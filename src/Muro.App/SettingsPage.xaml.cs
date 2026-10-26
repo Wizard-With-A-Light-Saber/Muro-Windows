@@ -14,6 +14,7 @@ namespace Muro.App;
 public sealed partial class SettingsPage : Page
 {
     private static readonly (string Label, double Speed)[] Speeds = [("0.5x", 0.5), ("0.75x", 0.75), ("1x", 1.0), ("1.25x", 1.25), ("1.5x", 1.5)];
+    private static readonly string[] QualityModes = [PlaybackMode.Auto, PlaybackMode.Smooth, PlaybackMode.Efficient];
     private static readonly int[] LowBatteryLevels = [10, 15, 20, 30, 40, 50];
     private bool _loading;
 
@@ -50,8 +51,8 @@ public sealed partial class SettingsPage : Page
         SpeedBox.ItemsSource = Speeds.Select(s => s.Label).ToList();
         var speed = config.PlaybackSpeed ?? 1.0;
         SpeedBox.SelectedIndex = Array.FindIndex(Speeds, s => Math.Abs(s.Speed - speed) < 0.01) is var i and >= 0 ? i : 2;
-        QualityBox.ItemsSource = new[] { "Smooth", "Efficient" };
-        QualityBox.SelectedIndex = AppSettings.Load(Services.Root).Efficient ? 1 : 0;
+        QualityBox.ItemsSource = new[] { "Automatic", "Smooth", "Efficient" };
+        QualityBox.SelectedIndex = Array.IndexOf(QualityModes, AppSettings.Load(Services.Root).DefaultMode ?? PlaybackMode.Auto) is var q and >= 0 ? q : 0;
 
         FullscreenSwitch.IsOn = config.PauseOnFullscreen;
         SaverSwitch.IsOn = config.PauseOnBatterySaver;
@@ -148,7 +149,7 @@ public sealed partial class SettingsPage : Page
     private void OnQualityChanged(object sender, SelectionChangedEventArgs e)
     {
         if (_loading || QualityBox.SelectedIndex < 0) return;
-        var mode = QualityBox.SelectedIndex == 1 ? "efficient" : "smooth";
+        var mode = QualityModes[QualityBox.SelectedIndex];
         Change(() => AppSettings.Update(Services.Root, s => s.DefaultMode = mode));
     }
 
@@ -247,7 +248,9 @@ public sealed partial class SettingsPage : Page
             case "automation": ScheduleControl.StartAutomation(Services.Root, surface, choice.Id!); break;
             default:
                 ScheduleControl.Stop(Services.Root, surface, restore: false);
-                var mode = surface == Surface.ScreenSaver && AppSettings.Load(Services.Root).Efficient ? "efficient" : "smooth";
+                var mode = surface == Surface.ScreenSaver
+                    ? AppSettings.Load(Services.Root).ModeFor(Services.Library.Manifest.Find(choice.Id ?? ""))
+                    : PlaybackMode.Smooth;
                 EngineConfig.Update(Services.Root, c =>
                 {
                     var assignment = choice.Kind == "wallpaper" ? new EngineConfig.Assignment(choice.Id!, mode) : null;

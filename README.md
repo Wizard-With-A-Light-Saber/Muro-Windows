@@ -190,7 +190,7 @@ built; say if you want it.
 - **Quit Muro** in the tray stops the wallpaper (the engine exits and your own wallpaper returns). Applying a
   wallpaper, or Open Muro then Apply, starts it again.
 - The tray icon is **on** by default; Start with Windows is **off**.
-- **Default quality** only decides how Featured's Apply plays; the Library keeps its Smooth / Efficient menu.
+- **Default quality** decides how a wallpaper plays when Muro picks the mode for you (see "Efficient by default for heavy wallpapers" below); the Library keeps its explicit Smooth / Efficient menu.
 - **Pause After** and *Replay when the desktop is clear* stay on the Schedules page (one place, so two controls
   cannot disagree); the download-folder controls stay on the Library page.
 - The Featured banner follows the macOS rules: only wallpapers you downloaded, never your own imports, never a
@@ -377,3 +377,22 @@ my background" cannot do this: it only looks at the still wallpaper image, never
   DWORD), and the Settings switch did the same through the real UI.
 - Not tested: a wallpaper with no colour at all on real hardware (only in a unit test), high-contrast themes, and
   accent colour on Start and taskbar being switched off in Windows (the accent still changes; Windows decides where it shows).
+
+## Efficient by default for heavy wallpapers
+
+Settings, Playback, **Default quality** is now **Automatic** (the default), Smooth or Efficient. Automatic gives a wallpaper the
+real 30 fps copy only when it is heavy, **4K at 50 fps or more** (3840x2160 and up, 50 fps and up); 1440p60, 4K30 and
+1080p60 stay Smooth. Measured here: the worst case (1080p60 plus a 4K60 wallpaper on two displays) went from about 4%
+of the whole CPU to about 1.5%.
+
+- It applies to anything that picks a mode for you: Apply on the Featured tab, each playlist or automation step, the
+  screen saver, and `muro set` without a flag. A step moves between modes as it moves between wallpapers.
+- **What you choose yourself always wins**: the Smooth and Efficient entries in a Library card's Apply menu, `muro set
+  --smooth` or `--efficient`, and Smooth or Efficient picked as the default quality.
+- If the 30 fps copy does not exist yet, the engine makes it in the background (about 30 s for a short 4K60 clip). Until it
+  is ready the wallpaper plays with its frame rate capped at the player, and then switches to the copy by itself. The
+  copy costs disk space (about the size of the original).
+- Wallpapers you applied before this stay as they were. The quality choice is stored as `qualityMode` in
+  `app-settings.json` and only when picked; the old `defaultMode` key that earlier builds wrote as a default is ignored,
+  so existing installs get Automatic.
+- Not tested: a very long 4K60 wallpaper (the copy takes proportionally longer), and a disk with no free space for the copy.

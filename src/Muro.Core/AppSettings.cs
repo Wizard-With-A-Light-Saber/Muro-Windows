@@ -22,8 +22,13 @@ public sealed class ScreenSaverBackup
 /// <see cref="EngineConfig"/> so the engine has one file to watch.
 public sealed class AppSettings
 {
-    /// "smooth" or "efficient": how a wallpaper applied with one click plays.
-    public string DefaultMode { get; set; } = "smooth";
+    /// "auto", "smooth" or "efficient": how a wallpaper applied with one click (Featured, the screen saver, a
+    /// playlist step) plays. Auto gives the heaviest wallpapers (4K at 50 fps or more) the 30 fps copy and the rest
+    /// the original frame rate. See <see cref="PlaybackMode"/>.
+    /// Stored as "qualityMode" and only when the user picks one: files from before Automatic existed carry an
+    /// old "defaultMode": "smooth" that was a default, never a choice, and is ignored.
+    [JsonPropertyName("qualityMode")]
+    public string? DefaultMode { get; set; }
     /// The release the user has already been told about, so the callout is not shown twice.
     public string? SeenUpdateVersion { get; set; }
     /// The wallpaper chosen for the Featured banner. Falls back when it is no longer in the library.
@@ -32,8 +37,8 @@ public sealed class AppSettings
     /// Set while Muro is the Windows screen saver; null otherwise.
     public ScreenSaverBackup? ScreenSaverBefore { get; set; }
 
-    [JsonIgnore]
-    public bool Efficient => DefaultMode == "efficient";
+    /// The mode this wallpaper gets from the default setting.
+    public string ModeFor(Library.WallpaperEntry? entry) => PlaybackMode.Resolve(DefaultMode, entry);
 
     private static readonly JsonSerializerOptions Json = new(JsonSerializerDefaults.Web)
     {

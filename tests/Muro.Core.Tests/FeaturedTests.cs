@@ -81,12 +81,12 @@ public class FeaturedTests
     public void Settings_RoundTrip_AndDefaultsSurviveAMissingOrBrokenFile()
     {
         using var lib = new TempLibrary();
-        Assert.Equal("smooth", AppSettings.Load(lib.Root).DefaultMode);
+        Assert.Null(AppSettings.Load(lib.Root).DefaultMode);   // nothing chosen: Automatic
         AppSettings.Update(lib.Root, s => { s.DefaultMode = "efficient"; s.HeroId = "abc"; s.Pick = new PickDraw { Ids = ["x"], Day = "2026-10-26" }; });
         var back = AppSettings.Load(lib.Root);
-        Assert.Equal((true, "abc", "2026-10-26"), (back.Efficient, back.HeroId, back.Pick.Day));
+        Assert.Equal(("efficient", "abc", "2026-10-26"), (back.DefaultMode, back.HeroId, back.Pick.Day));
         File.WriteAllText(AppSettings.PathIn(lib.Root), "{ not json");
-        Assert.Equal("smooth", AppSettings.Load(lib.Root).DefaultMode);
+        Assert.Null(AppSettings.Load(lib.Root).DefaultMode);
     }
 
     [Fact]

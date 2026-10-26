@@ -14,7 +14,8 @@ const string Usage = """
     muro import <video>...                                 import your own videos
     muro library                                           list your wallpapers
     muro delete <id|title>... [--yes]                      delete wallpapers and every reference
-    muro set <id|title> [--monitor N] [--efficient]        play a wallpaper (all monitors, or one)
+    muro set <id|title> [--monitor N] [--smooth|--efficient]  play a wallpaper (all monitors, or one); by default
+                                                           4K at 50 fps or more plays as the 30 fps copy
     muro clear | pause | resume                            stop, pause or resume playback
     muro usage                                             disk use per wallpaper
     muro folder [<path> | --default]                       show or move the download folder
@@ -193,7 +194,8 @@ async Task<int> SetCommand()
     var entry = Pick(target, LibraryManifest.Load(root).Wallpapers, w => w.Id, w => w.Title);
     if (entry is null) return 1;
 
-    var mode = Flag("--efficient") ? "efficient" : "smooth";
+    // --smooth and --efficient are explicit; without either the default setting decides (Automatic by default).
+    var mode = Flag("--efficient") ? PlaybackMode.Efficient : Flag("--smooth") ? PlaybackMode.Smooth : AppSettings.Load(root).ModeFor(entry);
     if (mode == "efficient" && entry.Fps > EfficientVariant.MinimumFps && entry.EfficientFile is null)
     {
         var ffmpeg = Ffmpeg.Locate();
