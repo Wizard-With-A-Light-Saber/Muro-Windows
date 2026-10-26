@@ -84,7 +84,12 @@ public sealed partial class FeaturedPage : Page
         var before = (draw.Day, string.Join(',', draw.Ids));
         var drop = Featured.LatestDrop(items);
         var picks = Featured.Pick(items, draw, DateOnly.FromDateTime(DateTime.Now), Random.Shared);
-        if ((draw.Day, string.Join(',', draw.Ids)) != before) AppSettings.Update(Services.Root, s => s.Pick = draw);
+        if ((draw.Day, string.Join(',', draw.Ids)) != before)
+        {
+            // Remembering the draw is a courtesy: if the file is busy the same draw is simply made again.
+            try { AppSettings.Update(Services.Root, s => s.Pick = draw); }
+            catch (IOException) { }
+        }
         Fill(DropTitle, DropList, drop);
         Fill(PickTitle, PickList, picks);
 
@@ -184,7 +189,8 @@ public sealed partial class FeaturedPage : Page
     private void OnHeroPick(object sender, ItemClickEventArgs e)
     {
         if (e.ClickedItem is not LibraryItemVm vm) return;
-        AppSettings.Update(Services.Root, s => s.HeroId = vm.Entry.Id);
+        try { AppSettings.Update(Services.Root, s => s.HeroId = vm.Entry.Id); }
+        catch (IOException ex) { ShowMessage(InfoBarSeverity.Error, "That choice could not be saved", ex.Message); return; }
         Rebuild();
     }
 

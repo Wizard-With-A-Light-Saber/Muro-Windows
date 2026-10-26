@@ -167,7 +167,9 @@ internal sealed class UpdateService
     /// Opening the update, or dismissing its banner, is how someone acknowledges it: the banner is shown once per version.
     public void MarkSeen()
     {
-        if (Latest is { } release) AppSettings.Update(Services.Root, s => s.SeenUpdateVersion = release.Version);
+        // Best effort: if the file is busy the banner just comes back once more.
+        try { if (Latest is { } release) AppSettings.Update(Services.Root, s => s.SeenUpdateVersion = release.Version); }
+        catch (IOException) { }
         Changed?.Invoke();
     }
 

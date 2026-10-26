@@ -45,12 +45,28 @@ public sealed class EngineConfig
 
     public static string PathIn(string root) => Path.Combine(root, "config.json");
 
-    /// A missing or unreadable file gives defaults, never an exception: the engine must keep
-    /// running on a damaged config.
+    /// The file exists but could not be read (another program had it open, or it is damaged), so this
+    /// object holds defaults and <see cref="Save"/> will not write them over it.
+    [JsonIgnore]
+    public bool Unreadable { get; private set; }
+
+    /// A missing file gives defaults. One that cannot be read is tried again a few times, since a virus
+    /// scanner or the engine's own watcher may hold it for a moment, and then also gives defaults, never
+    /// an exception: the engine must keep running on a damaged config. Such a config is marked
+    /// <see cref="Unreadable"/> so that nobody saves those defaults over the real file.
     public static EngineConfig Load(string root)
     {
-        try { return JsonSerializer.Deserialize<EngineConfig>(File.ReadAllText(PathIn(root)), Json) ?? new(); }
-        catch { return new(); }
+        var path = PathIn(root);
+        for (var attempt = 0; ; attempt++)
+        {
+            if (!File.Exists(path)) return new();
+            try { return JsonSerializer.Deserialize<EngineConfig>(File.ReadAllText(path), Json) ?? new(); }
+            catch (Exception)
+            {
+                if (attempt >= 4) return new() { Unreadable = true };
+                Thread.Sleep(50);
+            }
+        }
     }
 
     /// Load, change one thing, save. The schedule runner writes this file too, so a caller must never
@@ -62,13 +78,13 @@ public sealed class EngineConfig
         config.Save(root);
     }
 
-    /// Atomic: write a sibling then replace, so a reader never sees half a file.
+    /// Atomic (see <see cref="SafeFile"/>), and a failure is an <see cref="IOException"/>. Refuses to replace a
+    /// file that could not be read.
     public void Save(string root)
     {
+        if (Unreadable)
+            throw new IOException("config.json could not be read, so Muro did not overwrite it. Close whatever is using it, or delete it to start over.");
         Directory.CreateDirectory(root);
-        var path = PathIn(root);
-        var tmp = path + ".tmp";
-        File.WriteAllText(tmp, JsonSerializer.Serialize(this, Json));
-        File.Move(tmp, path, overwrite: true);
+        SafeFile.WriteAtomically(PathIn(root), JsonSerializer.Serialize(this, Json));
     }
 }

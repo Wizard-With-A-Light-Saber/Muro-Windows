@@ -201,6 +201,12 @@ built; say if you want it.
   `app-settings.json`. An older Muro build left a `settings.json` in `%LOCALAPPDATA%\Muro` (different fields):
   Muro does not read or write it.
 - The window icon and tray icon are made from the macOS app icon by `scripts/make-icon.ps1`.
+- **A busy or damaged `config.json` is never overwritten.** Reading is tried a few times first (a virus scanner or
+  the engine's own file watcher may hold the file for a moment); if it still cannot be read, `Save` refuses
+  instead of writing defaults over your wallpaper assignment, and Settings says the setting was not saved. Writes
+  go to a temp file with its own name and the rename is retried briefly. `app-settings.json` follows the same rule.
+- **The tray icon retries.** If Windows refuses it while the shell is still starting (a launch at sign-in can beat
+  it), it is added again every 2 seconds for about a minute, and again whenever Explorer restarts.
 
 **Not done in M5 (with reasons)**
 - Appearance (Default / Light / Dark): the app follows the Windows theme.
@@ -226,7 +232,11 @@ built; say if you want it.
 - Start with Windows through a real sign-in. I never rebooted; I only wrote and removed the registry value.
   Test it with the **installed** build, not a `bin\Release` one: the value stores the engine path it was set from.
 - Switching Start with Windows off in Task Manager and back on in Settings.
-- The tray after an Explorer restart (the icon is re-added on `TaskbarCreated`; I could not trigger it safely).
+- The tray after a real Explorer restart. I posted the `TaskbarCreated` message to the tray window and the icon
+  stayed listed exactly once, but I did not restart Explorer. The retry after a *failed* first add (a sign-in
+  race) was not exercised either: I could not make Windows refuse the add.
+- The config-file protections are covered by unit tests (file held open, damaged file, short lock), not by a real
+  virus scanner racing the engine.
 - The tray menu on a high-DPI second monitor, and keyboard use of the tray (Windows decides how that works).
 - *Download* in the update dialog (it opens the asset URL in the browser; the test feed pointed at example.com).
 - The hero's Efficient apply when a 30 fps copy has to be made first (progress bar on the banner).

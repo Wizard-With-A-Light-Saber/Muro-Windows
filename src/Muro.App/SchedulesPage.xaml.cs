@@ -44,17 +44,26 @@ public sealed partial class SchedulesPage : Page
     {
         if (_loading || PauseAfterBox.SelectedIndex < 0) return;
         var seconds = PauseChoices[PauseAfterBox.SelectedIndex].Seconds;
-        var config = EngineConfig.Load(Services.Root);
-        config.PauseAfterSeconds = seconds == 0 ? null : seconds;
-        config.Save(Services.Root);
+        SaveSetting(c => c.PauseAfterSeconds = seconds == 0 ? null : seconds);
     }
 
     private void OnReplayToggled(object sender, RoutedEventArgs e)
     {
         if (_loading) return;
-        var config = EngineConfig.Load(Services.Root);
-        config.ReplayOnClearDesktop = ReplaySwitch.IsOn ? true : null;
-        config.Save(Services.Root);
+        var on = ReplaySwitch.IsOn;
+        SaveSetting(c => c.ReplayOnClearDesktop = on ? true : null);
+    }
+
+    /// One field, saved at once. If the file cannot be written (a program has it open, or it is damaged) the
+    /// controls go back to what is really saved instead of showing a change that did not stick.
+    private void SaveSetting(Action<EngineConfig> change)
+    {
+        try { EngineConfig.Update(Services.Root, change); }
+        catch (IOException ex)
+        {
+            AppLog.Info("setting not saved: " + ex.Message);
+            LoadSettings();
+        }
     }
 
     // ---- The lists

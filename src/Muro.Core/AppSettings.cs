@@ -35,21 +35,37 @@ public sealed class AppSettings
     // same folder, and rewriting it would throw its contents away.
     public static string PathIn(string root) => Path.Combine(root, "app-settings.json");
 
-    /// A missing or unreadable file gives defaults, never an exception.
+    /// The file exists but could not be read, so this object holds defaults that must not be saved over it.
+    [JsonIgnore]
+    public bool Unreadable { get; private set; }
+
+    /// A missing file gives defaults. One that cannot be read is tried again a few times (a virus scanner
+    /// may hold it for a moment) and then also gives defaults, never an exception, marked
+    /// <see cref="Unreadable"/> so <see cref="Update"/> leaves the real file alone.
     public static AppSettings Load(string root)
     {
-        try { return JsonSerializer.Deserialize<AppSettings>(File.ReadAllText(PathIn(root)), Json) ?? new(); }
-        catch { return new(); }
+        var path = PathIn(root);
+        for (var attempt = 0; ; attempt++)
+        {
+            if (!File.Exists(path)) return new();
+            try { return JsonSerializer.Deserialize<AppSettings>(File.ReadAllText(path), Json) ?? new(); }
+            catch (Exception)
+            {
+                if (attempt >= 4) return new() { Unreadable = true };
+                Thread.Sleep(50);
+            }
+        }
     }
 
+    /// Load, change, save. Throws <see cref="IOException"/> rather than overwrite a file it could not read
+    /// or lose to a program holding it open; callers treat that as "not saved".
     public static void Update(string root, Action<AppSettings> change)
     {
         var settings = Load(root);
+        if (settings.Unreadable)
+            throw new IOException(PathIn(root) + " could not be read, so Muro did not overwrite it.");
         change(settings);
         Directory.CreateDirectory(root);
-        var path = PathIn(root);
-        var tmp = path + ".tmp";
-        File.WriteAllText(tmp, JsonSerializer.Serialize(settings, Json));
-        File.Move(tmp, path, overwrite: true);
+        SafeFile.WriteAtomically(PathIn(root), JsonSerializer.Serialize(settings, Json));
     }
 }

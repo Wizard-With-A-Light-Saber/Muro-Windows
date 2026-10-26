@@ -79,6 +79,22 @@ public sealed partial class SettingsPage : Page
         MessageBar.IsOpen = true;
     }
 
+    /// A save that cannot happen (a program has the file open, or it is damaged) is said out loud, and the
+    /// page goes back to what is really saved instead of showing a change that did not stick.
+    private void Change(Action write)
+    {
+        try
+        {
+            write();
+            MessageBar.IsOpen = false;
+        }
+        catch (IOException ex)
+        {
+            ShowMessage(InfoBarSeverity.Error, "That setting could not be saved", ex.Message);
+            Load();
+        }
+    }
+
     // ---- General
 
     private void OnStartToggled(object sender, RoutedEventArgs e)
@@ -100,7 +116,9 @@ public sealed partial class SettingsPage : Page
 
     private void OnTrayToggled(object sender, RoutedEventArgs e)
     {
-        if (!_loading) EngineConfig.Update(Services.Root, c => c.ShowTrayIcon = TraySwitch.IsOn);
+        if (_loading) return;
+        var on = TraySwitch.IsOn;
+        Change(() => EngineConfig.Update(Services.Root, c => c.ShowTrayIcon = on));
     }
 
     // ---- Playback
@@ -109,14 +127,14 @@ public sealed partial class SettingsPage : Page
     {
         if (_loading || SpeedBox.SelectedIndex < 0) return;
         var speed = Speeds[SpeedBox.SelectedIndex].Speed;
-        EngineConfig.Update(Services.Root, c => c.PlaybackSpeed = Math.Abs(speed - 1.0) < 0.01 ? null : speed);
+        Change(() => EngineConfig.Update(Services.Root, c => c.PlaybackSpeed = Math.Abs(speed - 1.0) < 0.01 ? null : speed));
     }
 
     private void OnQualityChanged(object sender, SelectionChangedEventArgs e)
     {
         if (_loading || QualityBox.SelectedIndex < 0) return;
         var mode = QualityBox.SelectedIndex == 1 ? "efficient" : "smooth";
-        AppSettings.Update(Services.Root, s => s.DefaultMode = mode);
+        Change(() => AppSettings.Update(Services.Root, s => s.DefaultMode = mode));
     }
 
     // ---- Energy
@@ -127,20 +145,20 @@ public sealed partial class SettingsPage : Page
         // Only the field that was touched: the rest of the file may have moved on since this page loaded.
         var toggle = (ToggleSwitch)sender;
         var on = toggle.IsOn;
-        EngineConfig.Update(Services.Root, c =>
+        Change(() => EngineConfig.Update(Services.Root, c =>
         {
             if (toggle == FullscreenSwitch) c.PauseOnFullscreen = on;
             else if (toggle == SaverSwitch) c.PauseOnBatterySaver = on;
             else if (toggle == LowBatterySwitch) c.PauseOnLowBattery = on;
             else if (toggle == DesktopOnlySwitch) c.PlayOnlyOnDesktop = on ? true : null;
-        });
+        }));
     }
 
     private void OnLowBatteryChanged(object sender, SelectionChangedEventArgs e)
     {
         if (_loading || LowBatteryBox.SelectedIndex < 0) return;
         var percent = LowBatteryLevels[LowBatteryBox.SelectedIndex];
-        EngineConfig.Update(Services.Root, c => c.LowBatteryPercent = percent);
+        Change(() => EngineConfig.Update(Services.Root, c => c.LowBatteryPercent = percent));
     }
 
     // ---- Storage

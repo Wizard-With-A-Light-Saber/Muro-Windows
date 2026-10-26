@@ -28,8 +28,11 @@ public sealed class TrayIcon : IDisposable
     private readonly Native.WndProc _proc;
     private readonly string _tooltip;
     private readonly uint _taskbarCreated;
+    private const nuint RetryTimer = 1;
+
     private nint _hwnd, _icon;
-    private bool _visible;
+    private bool _wanted, _added;
+    private int _retries;
 
     /// Asked each time the menu opens, so it always reflects the current state.
     public Func<IReadOnlyList<Item>>? Menu { get; set; }
@@ -66,15 +69,34 @@ public sealed class TrayIcon : IDisposable
 
     public void Show()
     {
-        if (_visible || _hwnd == 0) return;
-        _visible = Notify(Native.NIM_ADD);
+        _wanted = true;
+        if (!_added) TryAdd();
     }
 
     public void Hide()
     {
-        if (!_visible) return;
-        Notify(Native.NIM_DELETE);
-        _visible = false;
+        _wanted = false;
+        StopRetry();
+        if (_added) Notify(Native.NIM_DELETE);
+        _added = false;
+    }
+
+    /// Adding can fail while the shell is still starting (a launch at sign-in can beat it), and then the
+    /// icon would never appear, with the app closed the only way in. So a failure is tried again every 2 s
+    /// for about a minute.
+    private void TryAdd()
+    {
+        if (_hwnd == 0) return;
+        _added = Notify(Native.NIM_ADD);
+        if (_added) { StopRetry(); return; }
+        if (_retries == 0) Native.SetTimer(_hwnd, RetryTimer, 2000, 0);
+        if (++_retries > 30) StopRetry();
+    }
+
+    private void StopRetry()
+    {
+        _retries = 0;
+        if (_hwnd != 0) Native.KillTimer(_hwnd, RetryTimer);
     }
 
     private bool Notify(uint message)
@@ -107,7 +129,21 @@ public sealed class TrayIcon : IDisposable
                 }
                 return 0;
             }
-            if (msg == _taskbarCreated && _visible) Notify(Native.NIM_ADD);
+            if (msg == Native.WM_TIMER && (nuint)wParam == RetryTimer)
+            {
+                if (_wanted && !_added) TryAdd();
+                else StopRetry();
+                return 0;
+            }
+            if (msg == _taskbarCreated && _wanted)
+            {
+                // The shell restarted and its tray is empty. Remove first so a registration that is still
+                // there cannot make the add fail or show a second icon.
+                if (_added) Notify(Native.NIM_DELETE);
+                _added = false;
+                StopRetry();
+                TryAdd();
+            }
         }
         catch (Exception ex) { Error?.Invoke(ex); }
         return Native.DefWindowProc(hwnd, msg, wParam, lParam);
