@@ -56,10 +56,17 @@ public static class ShellWindows
         // 2 = busy, 3 = running D3D full screen, 4 = presentation mode.
         if (Native.SHQueryUserNotificationState(out var state) == 0 && state is 2 or 3 or 4)
         {
-            var handle = Native.MonitorFromWindow(Native.GetForegroundWindow(), Native.MONITOR_DEFAULTTONEAREST);
-            var info = new Native.MONITORINFOEX { cbSize = (uint)Marshal.SizeOf<Native.MONITORINFOEX>() };
-            if (handle != 0 && Native.GetMonitorInfo(handle, ref info))
-                foreach (var m in monitors.Where(m => m.DeviceName == info.szDevice)) result.Add(m.Id);
+            var foreground = Native.GetForegroundWindow();
+            // With the bare desktop (or the taskbar) focused, Windows reports "busy" because that window is as
+            // big as the screen. It is not an app: pausing then freezes the wallpaper exactly when the desktop
+            // is clear and being looked at.
+            if (foreground != 0 && !ShellClasses.Contains(Native.ClassOf(foreground)))
+            {
+                var handle = Native.MonitorFromWindow(foreground, Native.MONITOR_DEFAULTTONEAREST);
+                var info = new Native.MONITORINFOEX { cbSize = (uint)Marshal.SizeOf<Native.MONITORINFOEX>() };
+                if (handle != 0 && Native.GetMonitorInfo(handle, ref info))
+                    foreach (var m in monitors.Where(m => m.DeviceName == info.szDevice)) result.Add(m.Id);
+            }
         }
         return result;
     }

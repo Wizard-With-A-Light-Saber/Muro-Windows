@@ -340,3 +340,11 @@ shortcut, leaving no Run or screen saver entry.
 - Updating over an existing install while Muro is running (the stop step is written, not exercised), and the
   installer's *Start with Windows* and *desktop shortcut* options (I only ran the defaults).
 - Windows 10, and 4K or high-DPI scaling of the installer wizard.
+
+## Fixes after M7
+
+- **Wallpaper paused on a clear desktop.** With no app windows open and the bare desktop clicked, Windows reports its
+  "busy" notification state (the desktop window is as big as the screen), which was read as a full-screen app and
+  froze that display, while a partly covered desktop kept playing. The busy state is now ignored when the focused
+  window is the desktop or the taskbar. A real full-screen window still pauses and resumes (checked live).
+- A wallpaper's own Pause After (Library card, gear) now takes effect at once; the engine did not watch `library.json`.
