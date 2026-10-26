@@ -85,6 +85,14 @@ if (fromDisk)
     watcher.Changed += (_, _) => Reload();
     watcher.Created += (_, _) => Reload();
     watcher.Renamed += (_, _) => Reload();
+
+    // A wallpaper's own Pause After lives in library.json, so changing it from the Library menu must reach the
+    // engine too, or it only takes effect at the next display or config change.
+    var libraryWatcher = new FileSystemWatcher(AppPaths.Root, "library.json") { EnableRaisingEvents = true };
+    void ReloadLibrary() => events.Post(() => manager.Reconcile());
+    libraryWatcher.Changed += (_, _) => ReloadLibrary();
+    libraryWatcher.Created += (_, _) => ReloadLibrary();
+    libraryWatcher.Renamed += (_, _) => ReloadLibrary();
 }
 
 try
