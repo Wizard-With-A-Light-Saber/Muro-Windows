@@ -255,6 +255,26 @@ internal static class EngineLauncher
     }
 }
 
+/// Finds Muro.scr, the screen saver program, the way the app finds the engine.
+internal static class ScreenSaverFiles
+{
+    public static string? Locate()
+    {
+        var baseDir = AppContext.BaseDirectory;
+        foreach (var candidate in new[] { Path.Combine(baseDir, "ScreenSaver", "Muro.scr"), Path.Combine(baseDir, "Muro.scr") })
+            if (File.Exists(candidate)) return candidate;
+        // Development tree: the screen saver build output under src/Muro.ScreenSaver/bin/Release.
+        for (var dir = new DirectoryInfo(baseDir); dir is not null; dir = dir.Parent)
+        {
+            var bin = Path.Combine(dir.FullName, "src", "Muro.ScreenSaver", "bin", "Release");
+            if (!Directory.Exists(bin)) continue;
+            var found = Directory.EnumerateFiles(bin, "Muro.scr", SearchOption.AllDirectories).FirstOrDefault();
+            if (found is not null) return found;
+        }
+        return null;
+    }
+}
+
 internal static class PlaybackService
 {
     /// Which wallpaper ids are on a screen right now, from the shared config.

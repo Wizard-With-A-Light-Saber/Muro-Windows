@@ -56,10 +56,7 @@ public static class ScheduleStore
         var all = LoadAll(root);
         if (state.IsActive) all[Key(surface)] = state; else all.Remove(Key(surface));
         Directory.CreateDirectory(root);
-        var path = PathIn(root);
-        var tmp = path + ".tmp";
-        File.WriteAllText(tmp, JsonSerializer.Serialize(all, Json));
-        File.Move(tmp, path, overwrite: true);
+        SafeFile.WriteAtomically(PathIn(root), JsonSerializer.Serialize(all, Json));
     }
 }
 

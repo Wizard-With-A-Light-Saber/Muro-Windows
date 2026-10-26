@@ -242,3 +242,54 @@ built; say if you want it.
 - The hero's Efficient apply when a 30 fps copy has to be made first (progress bar on the banner).
 - Playback speed by eye (the engine logs the change and mpv accepted it; I did not time a clip).
 - Dark/light theme looks, and narrow window widths, of the new pages.
+
+## M6: screen saver and lock screen
+
+**What exists**
+- **Screen saver** (`Muro.scr`, built by `src/Muro.ScreenSaver`): plays the chosen wallpaper on every display and ends
+  on the first key, click, wheel turn or mouse movement of more than about 10 pixels (a small jiggle does not end
+  it). It is a normal Windows screen saver, so Windows' own idle timer starts it. Settings, *Screen saver*:
+  **Use Muro as the screen saver** points Windows' per-user setting (`SCRNSAVE.EXE`, no admin rights) at
+  `Muro.scr` and remembers what was there, so turning it off puts back exactly the old program, on/off state and
+  delay. **Start after** is Windows' own delay. **Plays**: the desktop wallpaper (the default), one wallpaper, a
+  playlist or an automation (the engine runs it for the screen saver exactly like the desktop one). **Try it now**.
+- **Lock screen**: Windows cannot play video on the lock screen, so Muro sets one **still frame** of the chosen
+  wallpaper (up to 3840 wide, made once by ffmpeg into `Stills\`). A playlist or automation changes the picture as
+  it moves on. The first time, your own lock screen picture is saved; turning it off, or deleting the wallpaper,
+  puts it back. No admin rights or package identity are needed.
+- The playlist, automation and Pause After machinery now has one runner per surface (desktop, screen saver, lock
+  screen), each with its own state in `schedule.json` (the slots M4 left).
+- Deleting a wallpaper also clears it from the screen saver and lock screen and removes its still.
+- Fixed on the way: mpv keeps the PC awake while a video plays by default, which would have stopped Windows'
+  screen saver and display sleep for as long as the wallpaper played. It is now switched off in the player.
+
+**Defaults I chose (nobody was available to ask; change any of them)**
+- The screen saver plays the desktop wallpaper unless you pick something else; with no library it ends at once.
+- Turning Muro on as the screen saver keeps Windows' current delay (20 minutes here) or uses 10 minutes if the
+  screen saver was off.
+- The lock screen still is the frame at about 2 seconds in (or the middle of a short clip).
+- Only a lock screen set to **Picture** is replaced cleanly. If it was Windows Spotlight or a slideshow, Muro
+  switches it to a picture, says so in Settings, and turning it off restores the saved picture, not Spotlight.
+- The screen saver's small preview in Windows' own dialog is left blank, and its Settings button shows a message
+  that points to Muro.
+
+**Checked live on this PC (throwaway library)**
+- The screen saver on both displays, over everything, no pointer; ended by key, click, wheel and movement, not by a
+  2 px jiggle; Windows launched `Muro.scr /s` by itself (its log shows it) when asked to start the screen saver.
+- Settings: on writes `SCRNSAVE.EXE` and keeps the 1200 s delay; Start after 1 minute is written to Windows;
+  off restored the exact original values (no program, active, 1200 s).
+- An automation chosen for the screen saver rotated its wallpaper every 10 s through the engine.
+- The lock screen: on changed the picture (440 KB against the original 773 KB), off brought back a picture with a
+  pixel difference of 0 from the original.
+
+**Not tested, please check:**
+- Windows starting the screen saver on its own after real idle time (I could not stay idle: the PC is in use).
+  Triggering it by message did start `Muro.scr /s`, but that run found the real library empty and ended.
+- The lock screen itself (press Win+L and look). I only read the stored picture back, never looked at the real
+  lock screen.
+- A lock screen set to Spotlight or a slideshow, and Windows policies that manage the lock screen.
+- Several lock screen changes in a row (a playlist) on a slow PC, and a long wallpaper whose still takes time.
+- Multi-monitor with different resolutions for the screen saver (both displays here are 1920x1080).
+- The Settings button in Windows' screen saver dialog, and *Try it now* from the app.
+- `muro` has no `--on screensaver|lockscreen` switch yet: the screen saver and lock screen are set from Settings.
+- Installed layout: `Muro.scr` and the engine's ffmpeg lookup are only exercised in the development tree (M7).

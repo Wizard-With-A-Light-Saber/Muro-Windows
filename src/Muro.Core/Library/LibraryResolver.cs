@@ -1,10 +1,8 @@
-using Muro.Core;
-using Muro.Core.Library;
+namespace Muro.Core.Library;
 
-namespace Muro.Engine;
-
-/// Turns a config assignment into the video file to play.
-internal static class LibraryResolver
+/// Turns a config assignment into the video file to play. Shared by the engine (the desktop) and the
+/// screen saver, so both pick exactly the same file for the same assignment.
+public static class LibraryResolver
 {
     /// <paramref name="IsEfficientFile"/> is true when the file is the 30 fps variant, so the player
     /// needs no frame-rate filter on top.

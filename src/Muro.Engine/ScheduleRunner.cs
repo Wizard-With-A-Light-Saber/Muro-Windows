@@ -16,17 +16,20 @@ internal sealed class ScheduleRunner : IDisposable
 {
     private readonly string _root;
     private readonly SystemEvents _events;
+    private readonly Surface _surface;
     private readonly Scheduler _scheduler = new();
     private FileSystemWatcher? _watcher;
     private nuint _timer, _syncTimer;
     private bool _syncing;
 
-    public ScheduleRunner(string root, SystemEvents events)
+    /// One runner per surface (desktop, screen saver, lock screen), each with its own schedule and state.
+    public ScheduleRunner(string root, SystemEvents events, Surface surface = Surface.Desktop)
     {
         _root = root;
         _events = events;
-        _scheduler.CurrentId = () => EngineConfig.Load(_root).AllDisplays?.WallpaperID;
-        _scheduler.Apply = ApplyToDesktop;
+        _surface = surface;
+        _scheduler.CurrentId = () => CurrentId(EngineConfig.Load(_root));
+        _scheduler.Apply = ApplyToSurface;
         _scheduler.Changed = OnChanged;
         events.Resumed += () => _scheduler.Reevaluate();
         events.TimeChanged += () => _scheduler.Reevaluate();
@@ -60,7 +63,7 @@ internal sealed class ScheduleRunner : IDisposable
     {
         // Read the persisted state first: updating the lists reports a change, which must not be allowed
         // to overwrite what a restart needs to resume from.
-        var state = ScheduleStore.Load(_root, Surface.Desktop);
+        var state = ScheduleStore.Load(_root, _surface);
         var automations = AutomationStore.Load(_root);
         var playlists = PlaylistStore.Load(_root);
 
@@ -100,7 +103,7 @@ internal sealed class ScheduleRunner : IDisposable
             // The wallpaper on screen was deleted, or nothing is on screen: put a valid one up.
             if (_scheduler.IsRunning)
             {
-                var current = EngineConfig.Load(_root).AllDisplays?.WallpaperID;
+                var current = CurrentId(EngineConfig.Load(_root));
                 if (current is null || LibraryManifest.Load(_root).Find(current) is null) _scheduler.ShowCurrentAgain();
             }
         }
@@ -117,22 +120,40 @@ internal sealed class ScheduleRunner : IDisposable
         ArmTimer();
     }
 
-    private void ApplyToDesktop(string id)
+    private string? CurrentId(EngineConfig config) => _surface switch
     {
-        // Only the desktop assignment: a load-modify-save, so the energy settings the UI wrote are kept.
-        // A schedule drives every display, so per-display overrides give way to it.
+        Surface.ScreenSaver => config.ScreenSaver?.WallpaperID,
+        Surface.LockScreen => config.LockScreen?.WallpaperID,
+        _ => config.AllDisplays?.WallpaperID,
+    };
+
+    private void ApplyToSurface(string id)
+    {
+        // Only this surface's assignment: a load-modify-save, so the energy settings the UI wrote are kept.
+        // A desktop schedule drives every display, so per-display overrides give way to it.
         var config = EngineConfig.Load(_root);
-        config.AllDisplays = new EngineConfig.Assignment(id, config.AllDisplays?.Mode ?? "smooth");
-        config.PerDisplay.Clear();
+        switch (_surface)
+        {
+            case Surface.ScreenSaver:
+                config.ScreenSaver = new EngineConfig.Assignment(id, config.ScreenSaver?.Mode ?? "smooth");
+                break;
+            case Surface.LockScreen:
+                config.LockScreen = new EngineConfig.Assignment(id);
+                break;
+            default:
+                config.AllDisplays = new EngineConfig.Assignment(id, config.AllDisplays?.Mode ?? "smooth");
+                config.PerDisplay.Clear();
+                break;
+        }
         config.Save(_root);
-        Log.Info("schedule: now showing " + id);
+        Log.Info($"schedule ({_surface}): now showing {id}");
     }
 
     /// Writes where the schedule is, keeping what was showing before it started. Skipped when nothing
     /// changed, so the engine does not wake itself up through its own file watcher.
     private void Persist()
     {
-        var existing = ScheduleStore.Load(_root, Surface.Desktop);
+        var existing = ScheduleStore.Load(_root, _surface);
         var next = _scheduler.IsRunning
             ? new ScheduleState
             {
@@ -147,7 +168,7 @@ internal sealed class ScheduleRunner : IDisposable
         if (existing.AutomationID == next.AutomationID && existing.PlaylistID == next.PlaylistID
             && existing.StepIndex == next.StepIndex && existing.StepStartedAt == next.StepStartedAt
             && !existing.PendingStart && existing.IsActive == next.IsActive) return;
-        ScheduleStore.Save(_root, Surface.Desktop, next);
+        ScheduleStore.Save(_root, _surface, next);
     }
 
     private static DateTime ToSecond(DateTime utc) =>

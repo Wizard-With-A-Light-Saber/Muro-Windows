@@ -10,6 +10,14 @@ public sealed class PickDraw
     public string? Day { get; set; }
 }
 
+/// What Windows had for its screen saver before Muro took it over, so turning Muro off puts it back.
+public sealed class ScreenSaverBackup
+{
+    public string? Exe { get; set; }
+    public bool Active { get; set; }
+    public int TimeoutSeconds { get; set; }
+}
+
 /// Preferences only the app cares about. What the engine acts on (pause rules, speed, tray) lives in
 /// <see cref="EngineConfig"/> so the engine has one file to watch.
 public sealed class AppSettings
@@ -21,6 +29,8 @@ public sealed class AppSettings
     /// The wallpaper chosen for the Featured banner. Falls back when it is no longer in the library.
     public string? HeroId { get; set; }
     public PickDraw Pick { get; set; } = new();
+    /// Set while Muro is the Windows screen saver; null otherwise.
+    public ScreenSaverBackup? ScreenSaverBefore { get; set; }
 
     [JsonIgnore]
     public bool Efficient => DefaultMode == "efficient";

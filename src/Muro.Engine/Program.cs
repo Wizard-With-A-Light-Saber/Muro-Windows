@@ -1,4 +1,6 @@
 using Muro.Core;
+using Muro.Core.Library;
+using Muro.Core.Schedule;
 using Muro.Engine;
 using Muro.Platform;
 
@@ -52,12 +54,15 @@ Log.Info($"system: {events.State}");
 var manager = new WallpaperManager(events, () => config, a => LibraryResolver.Resolve(AppPaths.Root, a));
 int cleaned = 0;
 ScheduleRunner? runner = null;
+var surfaceRunners = new List<ScheduleRunner>();   // the screen saver and lock screen schedules
+LockScreenService? lockScreen = null;
 EngineTray? tray = null;
 void Cleanup()
 {
     if (Interlocked.Exchange(ref cleaned, 1) == 1) return;
     tray?.Dispose();   // removes the icon, or it lingers in the tray until the mouse passes over it
     runner?.Dispose();
+    foreach (var other in surfaceRunners) other.Dispose();
     manager.Dispose();
     events.Dispose();
     DesktopHost.RefreshWallpaper();
@@ -76,7 +81,7 @@ if (fromDisk)
     var watcher = new FileSystemWatcher(AppPaths.Root, "config.json") { EnableRaisingEvents = true };
     // The config is saved by writing a temp file and renaming it over config.json, which raises
     // Created or Renamed rather than Changed, so listen to all three.
-    void Reload() => events.Post(() => { Log.Info("config changed"); config = EngineConfig.Load(AppPaths.Root); tray?.Show(config.ShowTrayIcon); manager.Reconcile(); });
+    void Reload() => events.Post(() => { Log.Info("config changed"); config = EngineConfig.Load(AppPaths.Root); tray?.Show(config.ShowTrayIcon); lockScreen?.Sync(config); manager.Reconcile(); });
     watcher.Changed += (_, _) => Reload();
     watcher.Created += (_, _) => Reload();
     watcher.Renamed += (_, _) => Reload();
@@ -90,6 +95,14 @@ try
     {
         runner = new ScheduleRunner(AppPaths.Root, events);
         runner.Start();
+        foreach (var surface in new[] { Surface.ScreenSaver, Surface.LockScreen })
+        {
+            var other = new ScheduleRunner(AppPaths.Root, events, surface);
+            surfaceRunners.Add(other);
+            other.Start();
+        }
+        lockScreen = new LockScreenService(AppPaths.Root, events);
+        lockScreen.Sync(config);
         // Only the real engine has a tray icon, not a harness run started with a video on the command line.
         tray = new EngineTray(AppPaths.Root, () => runner?.RunningName, manager.Replay, MessageLoop.Quit);
         tray.Show(config.ShowTrayIcon);

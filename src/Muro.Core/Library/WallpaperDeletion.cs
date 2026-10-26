@@ -30,9 +30,18 @@ public static class WallpaperDeletion
             config.PerDisplay.Remove(key);
             changed = true;
         }
+        // The screen saver follows the desktop when it has no wallpaper of its own; the lock screen goes back
+        // to its original picture (the engine restores it when the assignment disappears).
+        if (config.ScreenSaver is { } saver && ids.Contains(saver.WallpaperID)) { config.ScreenSaver = null; changed = true; }
+        if (config.LockScreen is { } lockScreen && ids.Contains(lockScreen.WallpaperID)) { config.LockScreen = null; changed = true; }
         if (changed) config.Save(root);
 
         var manifest = LibraryWriter.Delete(root, ids);
+        foreach (var id in ids)
+        {
+            try { File.Delete(Media.Stills.PathFor(root, id)); }   // its lock screen still, if one was made
+            catch (IOException) { }
+        }
         foreach (var sink in sinks ?? []) sink(ids);
         return new Result(changed, manifest, stopped);
     }

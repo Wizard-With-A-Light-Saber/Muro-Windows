@@ -34,6 +34,11 @@ public sealed class EngineConfig
     /// The engine's notification-area icon. On by default: with the app closed it is the way back in.
     public bool ShowTrayIcon { get; set; } = true;
 
+    /// What the Muro screen saver plays. Null follows the desktop wallpaper.
+    public Assignment? ScreenSaver { get; set; }
+    /// The still shown on the lock screen (Windows cannot play video there). Null leaves the lock screen alone.
+    public Assignment? LockScreen { get; set; }
+
     public Assignment? AssignmentFor(string? monitorId) =>
         monitorId is not null && PerDisplay.TryGetValue(monitorId, out var specific) ? specific : AllDisplays;
 

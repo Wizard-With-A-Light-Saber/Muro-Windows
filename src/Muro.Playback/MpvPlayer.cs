@@ -28,6 +28,9 @@ public sealed class MpvPlayer : IDisposable
         Opt("screenshot-format", "jpg"); Opt("screenshot-jpeg-quality", "90");
         Opt("osd-level", "0");
         Opt("cursor-autohide", "no");
+        // mpv keeps the PC awake while a video plays, by default. A wallpaper must not: it would stop the screen
+        // saver and the display from ever sleeping.
+        Opt("stop-screensaver", "no");
         Opt("idle", "yes");
         // Cheapest scalers: the wallpaper is rarely scaled by much and the GPU stays quiet.
         Opt("scale", "bilinear"); Opt("cscale", "bilinear"); Opt("dscale", "bilinear");
@@ -85,6 +88,10 @@ public sealed class MpvPlayer : IDisposable
             _speed = value;
         }
     }
+
+    /// Hides the mouse pointer while it is over the video (the screen saver).
+    public void HideCursor() =>
+        Check(MpvNative.mpv_set_property_string(_ctx, "cursor-autohide", "always"), "cursor-autohide");
 
     /// Caps output at 30 fps for Efficient mode; 0 restores the source rate.
     public void SetFpsCap(int fps) =>

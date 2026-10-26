@@ -110,6 +110,60 @@
                 </StackPanel>
             </Border>
 
+            <TextBlock Text="Screen saver" Style="{StaticResource SectionLabel}" />
+            <Border Style="{StaticResource Card}">
+                <StackPanel Spacing="16">
+                    <Grid ColumnSpacing="16">
+                        <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
+                        <StackPanel>
+                            <TextBlock Text="Use Muro as the screen saver" />
+                            <TextBlock x:Name="SaverNote" Style="{StaticResource Hint}" Text="Plays a wallpaper on every display when the PC is idle" />
+                        </StackPanel>
+                        <ToggleSwitch x:Name="ScreenSaverSwitch" Grid.Column="1" Toggled="OnSaverToggled" />
+                    </Grid>
+                    <Grid ColumnSpacing="16">
+                        <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
+                        <StackPanel>
+                            <TextBlock Text="Start after" />
+                            <TextBlock Style="{StaticResource Hint}" Text="Windows' own setting: how long the PC sits idle first" />
+                        </StackPanel>
+                        <ComboBox x:Name="SaverDelayBox" Grid.Column="1" Width="150" SelectionChanged="OnSaverDelayChanged" />
+                    </Grid>
+                    <Grid ColumnSpacing="16">
+                        <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
+                        <StackPanel>
+                            <TextBlock Text="Plays" />
+                            <TextBlock Style="{StaticResource Hint}" Text="The desktop wallpaper, one wallpaper, a playlist or an automation" />
+                        </StackPanel>
+                        <ComboBox x:Name="SaverPlaysBox" Grid.Column="1" Width="230" SelectionChanged="OnSaverPlaysChanged" />
+                    </Grid>
+                    <Button x:Name="SaverTry" Content="Try it now" Click="OnSaverTry" />
+                </StackPanel>
+            </Border>
+
+            <TextBlock Text="Lock screen" Style="{StaticResource SectionLabel}" />
+            <Border Style="{StaticResource Card}">
+                <StackPanel Spacing="16">
+                    <Grid ColumnSpacing="16">
+                        <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
+                        <StackPanel>
+                            <TextBlock Text="Show a Muro picture on the lock screen" />
+                            <TextBlock x:Name="LockNote" Style="{StaticResource Hint}"
+                                       Text="Windows cannot play video on the lock screen, so it shows one frame of the wallpaper. Your own picture comes back when this is off." />
+                        </StackPanel>
+                        <ToggleSwitch x:Name="LockSwitch" Grid.Column="1" Toggled="OnLockToggled" />
+                    </Grid>
+                    <Grid ColumnSpacing="16">
+                        <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
+                        <StackPanel>
+                            <TextBlock Text="Shows" />
+                            <TextBlock Style="{StaticResource Hint}" Text="A playlist or automation changes the picture as it moves on" />
+                        </StackPanel>
+                        <ComboBox x:Name="LockPlaysBox" Grid.Column="1" Width="230" SelectionChanged="OnLockPlaysChanged" />
+                    </Grid>
+                </StackPanel>
+            </Border>
+
             <TextBlock Text="Displays" Style="{StaticResource SectionLabel}" />
             <Border Style="{StaticResource Card}">
                 <StackPanel x:Name="DisplaysHost" Spacing="10" />

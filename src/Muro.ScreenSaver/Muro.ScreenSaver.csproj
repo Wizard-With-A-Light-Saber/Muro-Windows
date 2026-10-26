@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <!-- WinExe: Windows starts a screen saver with no console. The build also writes a copy named Muro.scr,
+         which is what Windows' screen saver setting points at. -->
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows10.0.19041.0</TargetFramework>
+    <AssemblyName>Muro.ScreenSaver</AssemblyName>
+    <ApplicationManifest>..\Muro.Engine\app.manifest</ApplicationManifest>
+    <ApplicationIcon>..\..\assets\muro.ico</ApplicationIcon>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Muro.Core\Muro.Core.csproj" />
+    <ProjectReference Include="..\Muro.Platform\Muro.Platform.csproj" />
+    <ProjectReference Include="..\Muro.Playback\Muro.Playback.csproj" />
+  </ItemGroup>
+  <ItemGroup Condition="Exists('..\..\third_party\mpv\libmpv-2.dll')">
+    <None Include="..\..\third_party\mpv\libmpv-2.dll" Link="libmpv-2.dll" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+  <Target Name="MakeScr" AfterTargets="Build">
+    <Copy SourceFiles="$(TargetDir)$(AssemblyName).exe" DestinationFiles="$(TargetDir)Muro.scr" />
+  </Target>
+</Project>
