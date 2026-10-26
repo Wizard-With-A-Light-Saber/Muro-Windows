@@ -42,7 +42,8 @@ public sealed record ReleaseInfo(
             var windows = assets.EnumerateArray()
                 .Select(a => (Name: Str(a, "name"), Url: Str(a, "browser_download_url")))
                 .Where(a => a.Name is not null && a.Url is not null && IsWindowsAsset(a.Name))
-                .OrderBy(a => a.Name!.EndsWith(".zip", StringComparison.OrdinalIgnoreCase) ? 1 : 0)
+                // The installer first, then any other exe (the single-file Muro-Portable.exe), then the zip.
+                .OrderBy(a => a.Name!.EndsWith(".zip", StringComparison.OrdinalIgnoreCase) ? 2 : a.Name!.Contains("setup", StringComparison.OrdinalIgnoreCase) ? 0 : 1)
                 .FirstOrDefault();
             if (windows.Url is not null && Uri.TryCreate(windows.Url, UriKind.Absolute, out var u)) download = u;
         }

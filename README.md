@@ -396,3 +396,23 @@ of the whole CPU to about 1.5%.
   `app-settings.json` and only when picked; the old `defaultMode` key that earlier builds wrote as a default is ignored,
   so existing installs get Automatic.
 - Not tested: a very long 4K60 wallpaper (the copy takes proportionally longer), and a disk with no free space for the copy.
+
+## The single-file exe (Muro-Portable)
+
+`dist/Muro-Portable-<version>-win-x64.exe` (about 150 MB) is the whole app in **one file**: copy it anywhere and double-click.
+It needs nothing installed (no .NET, no installer), makes no registry entries and no shortcuts.
+
+- **First run:** it unpacks itself to `%LOCALAPPDATA%\Muro Portable\<version>-<hash>\` (about 2 seconds, with a small
+  "Setting up Muro" window) and starts `Muro.exe` from there. **Every later run** just starts it (about 1.5 seconds).
+  Windows Defender scans the freshly written files the first time they run, so the very first start can take 30 seconds or
+  more on a PC that has never seen them (measured here: 5 s when Defender already knew the files, 38 s when it did not).
+- A newer Muro-Portable.exe unpacks next to the old one and removes the older folders. Two copies started at once
+  unpack once. To remove Muro, delete that folder and the exe; your library in `%LOCALAPPDATA%\Muro` is separate.
+- **How it is built:** `scripts/publish.ps1` builds a small self-contained single-file launcher (`src/Muro.Portable`, 12 MB)
+  and appends the package zip and a trailer (`[zip][id][id length][zip length]["MUROPAYL"]`) to it. The launcher reads its
+  own file, copies the zip out and uses the standard zip extraction. The zip itself is now written entry by entry with
+  forward-slash names (Windows PowerShell 5.1's own zip writers use backslashes, which hung an earlier version of the launcher).
+- The update check prefers `Muro-Setup-*.exe` over `Muro-Portable-*.exe` when a release has both.
+- Unsigned, like the installer: SmartScreen will warn once.
+- Not tested: a PC without .NET or without internet (nothing needs either), running it from a read-only folder or a network
+  drive (it only reads itself; the unpack goes to `%LOCALAPPDATA%`), and a full disk (the launcher shows an error message).

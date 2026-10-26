@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <!-- The single-file launcher: Muro-Portable.exe. scripts/publish.ps1 appends the whole app (a zip) and a small
+         trailer to the published exe. It is self-contained, so it needs no .NET installed. -->
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <AssemblyName>Muro-Portable</AssemblyName>
+    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+    <SelfContained>true</SelfContained>
+    <PublishSingleFile>true</PublishSingleFile>
+    <PublishTrimmed>true</PublishTrimmed>
+    <InvariantGlobalization>true</InvariantGlobalization>
+    <EnableCompressionInSingleFile>false</EnableCompressionInSingleFile>
+    <ApplicationIcon>..\..\assets\muro.ico</ApplicationIcon>
+    <ApplicationManifest>..\Muro.Engine\app.manifest</ApplicationManifest>
+  </PropertyGroup>
+</Project>

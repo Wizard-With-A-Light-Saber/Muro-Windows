@@ -109,6 +109,15 @@ public class UpdateTests
     }
 
     [Fact]
+    public void TheInstallerIsPreferredOverThePortableExe_AndBothOverTheZip()
+    {
+        var info = ReleaseInfo.From(Json(Release("v1.0", Asset("Muro-Portable-1.0-win-x64.exe") + "," + Asset("Muro-1.0-win-x64.zip") + "," + Asset("Muro-Setup-1.0.exe"))))!;
+        Assert.Equal("Muro-Setup-1.0.exe", info.DownloadUrl!.Segments[^1]);
+        var noSetup = ReleaseInfo.From(Json(Release("v1.0", Asset("Muro-1.0-win-x64.zip") + "," + Asset("Muro-Portable-1.0-win-x64.exe"))))!;
+        Assert.Equal("Muro-Portable-1.0-win-x64.exe", noSetup.DownloadUrl!.Segments[^1]);
+    }
+
+    [Fact]
     public void MalformedPayloads_AreRefused()
     {
         Assert.Null(ReleaseInfo.From(Json("{}")));

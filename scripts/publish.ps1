@@ -47,7 +47,38 @@ foreach ($file in '..\NOTICE.md', '..\LICENSE', '..\LICENSE.md') {
 
 $zip = Join-Path $dist "Muro-$version-win-x64.zip"
 Write-Host "== zipping $zip"
-Compress-Archive -Path (Join-Path $stage '*') -DestinationPath $zip -CompressionLevel Optimal
+# One entry at a time with explicit forward-slash names. Compress-Archive and ZipFile.CreateFromDirectory in Windows
+# PowerShell 5.1 write backslashes, which other unzip tools do not expect.
+Add-Type -AssemblyName System.IO.Compression, System.IO.Compression.FileSystem
+$zipStream = [IO.File]::Create($zip)
+$archive = New-Object IO.Compression.ZipArchive($zipStream, [IO.Compression.ZipArchiveMode]::Create)
+try {
+    foreach ($file in Get-ChildItem $stage -Recurse -File) {
+        $name = $file.FullName.Substring($stage.Length + 1).Replace('\', '/')
+        [IO.Compression.ZipFileExtensions]::CreateEntryFromFile($archive, $file.FullName, $name, [IO.Compression.CompressionLevel]::Optimal) | Out-Null
+    }
+} finally { $archive.Dispose(); $zipStream.Dispose() }
+
+# The single file: a self-contained launcher with the zip inside it. First run unpacks to
+# %LOCALAPPDATA%\Muro Portable\<id>; the id changes whenever the package does, so a new build unpacks fresh.
+$id = "$version-" + (Get-FileHash $zip -Algorithm SHA256).Hash.ToLower().Substring(0, 8)
+$portableOut = Join-Path $dist 'portable-build'
+Write-Host '== building the single-file Muro-Portable.exe'
+dotnet publish src/Muro.Portable -c $Configuration -o $portableOut
+if ($LASTEXITCODE -ne 0) { throw 'portable launcher build failed' }
+$portable = Join-Path $dist "Muro-Portable-$version-win-x64.exe"
+Move-Item (Join-Path $portableOut 'Muro-Portable.exe') $portable
+Remove-Item $portableOut -Recurse -Force
+# Append the package and the trailer the launcher looks for: [zip][id][id length: int32][zip length: int64]["MUROPAYL"]
+$out = [IO.File]::Open($portable, [IO.FileMode]::Append, [IO.FileAccess]::Write)
+try {
+    $in = [IO.File]::OpenRead($zip); $in.CopyTo($out); $in.Dispose()
+    $idBytes = [Text.Encoding]::UTF8.GetBytes($id)
+    $out.Write($idBytes, 0, $idBytes.Length)
+    $out.Write([BitConverter]::GetBytes([int]$idBytes.Length), 0, 4)
+    $out.Write([BitConverter]::GetBytes([long](Get-Item $zip).Length), 0, 8)
+    $magic = [Text.Encoding]::ASCII.GetBytes('MUROPAYL'); $out.Write($magic, 0, 8)
+} finally { $out.Dispose() }
 
 if (-not $SkipInstaller) {
     & (Join-Path $PSScriptRoot 'fetch-installer-tools.ps1')
