@@ -147,6 +147,8 @@ internal sealed class WallpaperManager : IDisposable
             _lastGlobalPauseAfter = config.PauseAfterSeconds;
             foreach (var slot in _slots.Values) Arm(slot, evaluate: false);
         }
+        var speed = Math.Clamp(config.PlaybackSpeed ?? 1.0, 0.25, 4.0);
+        foreach (var slot in _slots.Values) slot.Player.Speed = speed;
         Evaluate();
     }
 

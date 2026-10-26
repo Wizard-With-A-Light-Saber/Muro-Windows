@@ -72,6 +72,20 @@ public sealed class MpvPlayer : IDisposable
         set => Check(MpvNative.mpv_set_property_string(_ctx, "pause", value ? "yes" : "no"), "pause");
     }
 
+    private double _speed = 1.0;
+
+    /// Playback rate. mpv keeps it across loadfile, so it is only written when it changes.
+    public double Speed
+    {
+        get => _speed;
+        set
+        {
+            if (Math.Abs(value - _speed) < 0.001) return;
+            Check(MpvNative.mpv_set_property_string(_ctx, "speed", value.ToString("0.###", System.Globalization.CultureInfo.InvariantCulture)), "speed");
+            _speed = value;
+        }
+    }
+
     /// Caps output at 30 fps for Efficient mode; 0 restores the source rate.
     public void SetFpsCap(int fps) =>
         Check(MpvNative.mpv_set_property_string(_ctx, "vf", fps > 0 ? $"fps=fps={fps}" : ""), "vf");

@@ -31,6 +31,9 @@ public sealed class EngineConfig
     public bool? ReplayOnClearDesktop { get; set; }
     public int? PauseAfterSeconds { get; set; }
 
+    /// The engine's notification-area icon. On by default: with the app closed it is the way back in.
+    public bool ShowTrayIcon { get; set; } = true;
+
     public Assignment? AssignmentFor(string? monitorId) =>
         monitorId is not null && PerDisplay.TryGetValue(monitorId, out var specific) ? specific : AllDisplays;
 
@@ -48,6 +51,15 @@ public sealed class EngineConfig
     {
         try { return JsonSerializer.Deserialize<EngineConfig>(File.ReadAllText(PathIn(root)), Json) ?? new(); }
         catch { return new(); }
+    }
+
+    /// Load, change one thing, save. The schedule runner writes this file too, so a caller must never
+    /// hold a config and save it later: that would put back a wallpaper the playlist just rotated away from.
+    public static void Update(string root, Action<EngineConfig> change)
+    {
+        var config = Load(root);
+        change(config);
+        config.Save(root);
     }
 
     /// Atomic: write a sibling then replace, so a reader never sees half a file.
