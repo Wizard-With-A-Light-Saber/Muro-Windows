@@ -34,6 +34,9 @@ public sealed class EngineConfig
     /// The engine's notification-area icon. On by default: with the app closed it is the way back in.
     public bool ShowTrayIcon { get; set; } = true;
 
+    /// The Windows accent colour follows the wallpaper on the main display. The user's own colour is kept and comes back when off.
+    public bool MatchAccent { get; set; }
+
     /// What the Muro screen saver plays. Null follows the desktop wallpaper.
     public Assignment? ScreenSaver { get; set; }
     /// The still shown on the lock screen (Windows cannot play video there). Null leaves the lock screen alone.

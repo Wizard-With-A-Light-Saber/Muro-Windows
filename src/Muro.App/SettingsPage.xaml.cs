@@ -45,6 +45,7 @@ public sealed partial class SettingsPage : Page
             ? "Turned off in Windows (Settings, Apps, Startup). Turn it on here to allow it again."
             : "Starts Muro quietly in the background when you sign in";
         TraySwitch.IsOn = config.ShowTrayIcon;
+        AccentSwitch.IsOn = config.MatchAccent;
 
         SpeedBox.ItemsSource = Speeds.Select(s => s.Label).ToList();
         var speed = config.PlaybackSpeed ?? 1.0;
@@ -122,6 +123,17 @@ public sealed partial class SettingsPage : Page
         if (_loading) return;
         var on = TraySwitch.IsOn;
         Change(() => EngineConfig.Update(Services.Root, c => c.ShowTrayIcon = on));
+    }
+
+    private void OnAccentToggled(object sender, RoutedEventArgs e)
+    {
+        if (_loading) return;
+        var on = AccentSwitch.IsOn;
+        Change(() =>
+        {
+            EngineConfig.Update(Services.Root, c => c.MatchAccent = on);
+            EngineLauncher.EnsureRunning();   // the engine changes the colour, and puts yours back when this goes off
+        });
     }
 
     // ---- Playback

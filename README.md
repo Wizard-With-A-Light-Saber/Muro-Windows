@@ -354,3 +354,26 @@ shortcut, leaving no Run or screen saver entry.
   display is covered (`full screen: <display>: window '<title>' [<class>]`) to make any report easy to trace.
   Checked live: a full-screen window on Display 2 paused only Display 2, a click on Display 1's bare desktop paused
   nothing, and closing the window resumed Display 2.
+
+## Accent colour follows the wallpaper
+
+Settings, General, **Match the accent colour to the wallpaper** (off by default). While it is on, the Windows accent colour
+(taskbar, Start, title bars, and Muro's own buttons) is the dominant colour of the wallpaper on the **main display**, and
+it changes by itself whenever that wallpaper changes (a new apply, a playlist or automation step). Windows' own "pick from
+my background" cannot do this: it only looks at the still wallpaper image, never the live one.
+
+- The colour is picked from the wallpaper's thumbnail: colourful mid-tones count most, grey, black and white barely count
+  (a dark picture with one orange light gives orange), and the result is made vivid and mid-light so white text reads on
+  it. A picture with no colour gives a grey. The eight shades Windows keeps are built from it.
+- It writes the per-user accent values (`HKCU\...\DWM` and `Explorer\Accent`, no admin rights), switches Windows' own
+  automatic colour off while it is on, and broadcasts the change. The first time, your own values are saved to
+  `accent-backup.json` in the Muro folder; switching it off puts them back and deletes the file.
+- When Windows' automatic colour comes back, Windows itself recomputes three raw values from your still wallpaper
+  (`AccentColor`, `ColorizationColor`, `ColorizationAfterglow`); the colour you see is the same.
+- The engine does the work, so it keeps following the wallpaper with the app closed. Changing the other display does
+  nothing. Uninstalling while it is on leaves the colour as it is: turn it off in Settings first.
+- Checked live: on gave blue for the blue wallpaper and red for the red one, switching the main display's wallpaper
+  re-applied, changing the other display did not, off restored Windows' automatic colour (`AutoColorization` back as a
+  DWORD), and the Settings switch did the same through the real UI.
+- Not tested: a wallpaper with no colour at all on real hardware (only in a unit test), high-contrast themes, and
+  accent colour on Start and taskbar being switched off in Windows (the accent still changes; Windows decides where it shows).

@@ -45,6 +45,15 @@
                         </StackPanel>
                         <ToggleSwitch x:Name="TraySwitch" Grid.Column="1" Toggled="OnTrayToggled" />
                     </Grid>
+                    <Grid ColumnSpacing="16">
+                        <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
+                        <StackPanel>
+                            <TextBlock Text="Match the accent colour to the wallpaper" />
+                            <TextBlock Style="{StaticResource Hint}"
+                                       Text="The Windows accent colour (taskbar, Start, title bars and Muro's buttons) follows the wallpaper on your main display. Switching this off brings your own colour back." />
+                        </StackPanel>
+                        <ToggleSwitch x:Name="AccentSwitch" Grid.Column="1" Toggled="OnAccentToggled" />
+                    </Grid>
                 </StackPanel>
             </Border>
 
