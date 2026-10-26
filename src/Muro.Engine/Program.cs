@@ -7,6 +7,8 @@ using Muro.Platform;
 //               [--no-fullscreen-pause] [--low-battery N] [--seconds N] [--test-pause-after N]
 //   Muro.Engine --list-monitors | --dump
 //   Muro.Engine            (no video: runs whatever %LOCALAPPDATA%\Muro\config.json assigns)
+[System.Runtime.InteropServices.DllImport("kernel32")] static extern bool AttachConsole(int processId);
+AttachConsole(-1);   // the exe has no console of its own; this lets the harness switches print to the one that started it
 if (args.Contains("--dump")) { Console.WriteLine(DesktopHost.Dump()); return 0; }
 if (args.Contains("--list-monitors"))
 {
@@ -50,9 +52,11 @@ Log.Info($"system: {events.State}");
 var manager = new WallpaperManager(events, () => config, a => LibraryResolver.Resolve(AppPaths.Root, a));
 int cleaned = 0;
 ScheduleRunner? runner = null;
+EngineTray? tray = null;
 void Cleanup()
 {
     if (Interlocked.Exchange(ref cleaned, 1) == 1) return;
+    tray?.Dispose();   // removes the icon, or it lingers in the tray until the mouse passes over it
     runner?.Dispose();
     manager.Dispose();
     events.Dispose();
@@ -72,7 +76,7 @@ if (fromDisk)
     var watcher = new FileSystemWatcher(AppPaths.Root, "config.json") { EnableRaisingEvents = true };
     // The config is saved by writing a temp file and renaming it over config.json, which raises
     // Created or Renamed rather than Changed, so listen to all three.
-    void Reload() => events.Post(() => { Log.Info("config changed"); config = EngineConfig.Load(AppPaths.Root); manager.Reconcile(); });
+    void Reload() => events.Post(() => { Log.Info("config changed"); config = EngineConfig.Load(AppPaths.Root); tray?.Show(config.ShowTrayIcon); manager.Reconcile(); });
     watcher.Changed += (_, _) => Reload();
     watcher.Created += (_, _) => Reload();
     watcher.Renamed += (_, _) => Reload();
@@ -86,6 +90,9 @@ try
     {
         runner = new ScheduleRunner(AppPaths.Root, events);
         runner.Start();
+        // Only the real engine has a tray icon, not a harness run started with a video on the command line.
+        tray = new EngineTray(AppPaths.Root, () => runner?.RunningName, manager.Replay, MessageLoop.Quit);
+        tray.Show(config.ShowTrayIcon);
     }
     using var quitTimer = seconds > 0 ? new Timer(_ => MessageLoop.Quit(), null, seconds * 1000, Timeout.Infinite) : null;
     using var pauseTimer = pauseAfter > 0

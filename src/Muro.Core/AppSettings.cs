@@ -31,7 +31,9 @@ public sealed class AppSettings
         DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
     };
 
-    public static string PathIn(string root) => Path.Combine(root, "settings.json");
+    // Not settings.json: an older Muro build left a file of that name (other fields, PascalCase) in the
+    // same folder, and rewriting it would throw its contents away.
+    public static string PathIn(string root) => Path.Combine(root, "app-settings.json");
 
     /// A missing or unreadable file gives defaults, never an exception.
     public static AppSettings Load(string root)

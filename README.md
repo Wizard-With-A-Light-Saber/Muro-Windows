@@ -133,7 +133,7 @@ overrides mpv options for benchmarking. Engine decisions are logged to `%LOCALAP
 **Not done in M4 (with reasons)**
 - The **lock screen** and **screen saver** playlists run through the same scheduler and state file
   (`schedule.json` already has a slot for each), but nothing applies them until M6.
-- The tray **play / replay** button that restarts Pause After is M5; the engine already has `Replay()`.
+- The tray **play / replay** button that restarts Pause After came in M5 ("Play again" in the tray menu).
 - A stray `paused (Fullscreen)` appeared once while a heavy screenshot loop ran; it did not reproduce in a
   controlled run and I could not find the cause.
 
@@ -152,3 +152,83 @@ including the last block end at 24:00; the playlist editor dialog; saving an aut
 
 **"Drag blocks"** is built as dragging a block *edge* (and the list order). Dragging a whole block sideways is not
 built; say if you want it.
+
+## M5: tray, Settings, Start with Windows, update checker, Featured
+
+**What exists**
+- **Tray icon**, owned by the engine (so it is there with the app closed). Left click opens Muro, or brings it
+  to the front. Right click: Open Muro, Pause / Resume wallpaper, Play again (restarts Pause After), Stop
+  "<schedule>" while a playlist or automation runs, Quit Muro. The icon comes back after an Explorer restart and
+  is removed when the engine quits. It can be turned off in Settings.
+- **Settings** (the gear at the bottom of the navigation): Start with Windows, tray icon, playback speed (0.5x to
+  1.5x, now actually applied by the engine: it was a config field that nothing read), default quality, the four
+  energy rules (covered by a full-screen app, Battery Saver, low battery with its percentage, play only on the
+  desktop), the connected displays, library size and a button to open the Muro folder, and About with
+  *Check for updates*.
+- **Start with Windows** writes `HKCU\...\Run\Muro` pointing at `Muro.Engine.exe` and nothing else: Muro starts
+  quietly with its tray icon and plays the wallpaper; the app window opens from the tray. If you switch it off in
+  Windows (Settings, Apps, Startup, or Task Manager) the switch shows Off and says why; switching it on here
+  allows it again.
+- **Update checker**: reads the GitHub releases of `MrRockySL/Muro` on launch, whenever the window comes to the
+  front (at most every 6 hours), and on demand. A newer release shows a banner (once per version) with *What's
+  new*, a dialog with the release notes and a Download button. The automatic check is silent when it fails; a
+  manual one says so.
+- **Featured** (first tab, the macOS Home): a banner, a strip to choose which downloaded wallpaper it shows, the
+  **Latest drop** (everything published at the newest publish time) and **Muro's Pick** (12 at random, drawn once
+  a day, never the drop, remembered for the day).
+- The engine is now a windowless exe (`WinExe`) with the Muro icon, so a sign-in launch opens no console. It
+  attaches to the console that started it for the harness switches; in a plain console window the prompt can
+  come back before the output, so use `| more` or `Start-Process -Wait -NoNewWindow`.
+
+**Defaults I chose (nobody was available to ask; change any of them)**
+- **Update rule.** The macOS release (a .dmg, version 5.x) lives in the same repository, so `releases/latest` would
+  offer it to Windows forever. Instead the newest non-draft, non-prerelease release that has a **Windows asset**
+  wins: an `.exe` or `.msi`, or a `.zip` whose name contains `win` (the installer is preferred). A release without
+  one is not an update. Publish Windows builds as GitHub releases with such an asset and a version above the
+  current one (`Directory.Build.props` says 0.1.0). Nothing is installed automatically: Download opens the asset in
+  the browser. Only the app checks; the tray does not.
+- **Quit Muro** in the tray stops the wallpaper (the engine exits and your own wallpaper returns). Applying a
+  wallpaper, or Open Muro then Apply, starts it again.
+- The tray icon is **on** by default; Start with Windows is **off**.
+- **Default quality** only decides how Featured's Apply plays; the Library keeps its Smooth / Efficient menu.
+- **Pause After** and *Replay when the desktop is clear* stay on the Schedules page (one place, so two controls
+  cannot disagree); the download-folder controls stay on the Library page.
+- The Featured banner follows the macOS rules: only wallpapers you downloaded, never your own imports, never a
+  stream. There is no bundled wallpaper on Windows, so before the first download it shows the newest catalog
+  wallpaper as a still picture with a Download button. The banner is a still image, not a looping video.
+- Every settings change reads `config.json`, changes one field and saves at once, because the schedule runner
+  writes that file too. UI-only choices (default quality, banner choice, today's Pick, the seen release) are in
+  `app-settings.json`. An older Muro build left a `settings.json` in `%LOCALAPPDATA%\Muro` (different fields):
+  Muro does not read or write it.
+- The window icon and tray icon are made from the macOS app icon by `scripts/make-icon.ps1`.
+
+**Not done in M5 (with reasons)**
+- Appearance (Default / Light / Dark): the app follows the Windows theme.
+- *Clear library and cache*: it deletes data, and doing it safely needs the playing and scheduled wallpapers
+  excluded; not worth guessing at.
+- Screen saver delay and lock-screen settings: M6.
+- The menu-bar icon styles and Dock icon options have no Windows meaning.
+- Update download and install inside the app (the installer is M7).
+
+**Checked live on this PC (throwaway library, a local fake release feed)**
+- Tray: icon appears, menu opens, Pause writes `paused` and the engine logs `paused (User)`, Play again wakes a
+  wallpaper Pause After froze, Quit exits and removes the icon, Open Muro starts the app when it is closed, a click
+  on the icon restores a minimised window.
+- Settings: tray, desktop-only and speed each change exactly one field in `config.json`; the engine logs
+  `speed 1.5x`. Start with Windows wrote the Run value (the engine path) and removed it again.
+- Updates: with the feed serving a macOS 5.2 release first and a Windows 9.9.0 second, the banner offered 9.9.0;
+  What's new showed the parsed notes; Later retired the banner and stored the version. Against real GitHub the
+  check answers "up to date" (there is no Windows release yet).
+- Featured: banner from the library, choosing another wallpaper from the strip, Apply (starts the engine), the
+  drop and Pick rows, and the Pick being saved for the day.
+
+**Not tested, please check:**
+- Start with Windows through a real sign-in. I never rebooted; I only wrote and removed the registry value.
+  Test it with the **installed** build, not a `bin\Release` one: the value stores the engine path it was set from.
+- Switching Start with Windows off in Task Manager and back on in Settings.
+- The tray after an Explorer restart (the icon is re-added on `TaskbarCreated`; I could not trigger it safely).
+- The tray menu on a high-DPI second monitor, and keyboard use of the tray (Windows decides how that works).
+- *Download* in the update dialog (it opens the asset URL in the browser; the test feed pointed at example.com).
+- The hero's Efficient apply when a 30 fps copy has to be made first (progress bar on the banner).
+- Playback speed by eye (the engine logs the change and mpv accepted it; I did not time a clip).
+- Dark/light theme looks, and narrow window widths, of the new pages.

@@ -4,6 +4,7 @@ using Muro.Core.Catalog;
 using Muro.Core.Library;
 using Muro.Core.Media;
 using Muro.Core.Schedule;
+using Muro.Core.Updates;
 using Muro.Platform;
 
 namespace Muro.App;
@@ -16,6 +17,7 @@ internal static class Services
     public static CatalogService Catalog { get; } = new();
     public static LibraryService Library { get; } = new();
     public static DownloadService Downloads { get; } = new();
+    public static UpdateService Updates { get; } = new();
 
     private static HttpClient CreateHttp()
     {
@@ -108,6 +110,70 @@ internal sealed class CatalogService
     }
 }
 
+/// Looks for a newer Windows build on GitHub. The automatic check is silent on every failure (offline,
+/// rate-limited, no release yet); only a check the user asked for reports "up to date" or "failed",
+/// because someone who pressed a button deserves an answer.
+internal sealed class UpdateService
+{
+    public enum State { Idle, Checking, UpToDate, Available, Failed }
+
+    /// Long enough to stay far inside GitHub's unauthenticated rate limit, short enough to hear about a release the day it lands.
+    private static readonly TimeSpan Interval = TimeSpan.FromHours(6);
+    private DateTime _last = DateTime.MinValue;
+
+    public State Current { get; private set; }
+    /// The newer release, while one is on offer.
+    public ReleaseInfo? Latest { get; private set; }
+    public event Action? Changed;
+
+    /// MURO_RELEASES_URL points the check at another feed, for trying the update flow without publishing.
+    private static string Url => Environment.GetEnvironmentVariable("MURO_RELEASES_URL") ?? UpdateChecker.ReleasesUrl;
+
+    public Task CheckIfDueAsync() => DateTime.UtcNow - _last < Interval ? Task.CompletedTask : CheckAsync(userInitiated: false);
+
+    public async Task CheckAsync(bool userInitiated)
+    {
+        if (Current == State.Checking) return;
+        _last = DateTime.UtcNow;
+        if (userInitiated) Set(State.Checking);
+        try
+        {
+            using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(20));
+            Latest = await UpdateChecker.FindAsync(Services.Http, AppVersion.Current, Url, timeout.Token);
+            Set(Latest is not null ? State.Available : userInitiated ? State.UpToDate : State.Idle);
+        }
+        catch (Exception ex) when (ex is HttpRequestException or OperationCanceledException or System.Text.Json.JsonException)
+        {
+            // A failed automatic check keeps whatever was known; a failed manual one says so.
+            if (userInitiated) Set(State.Failed);
+            else if (Current == State.Checking) Set(Latest is null ? State.Idle : State.Available);
+        }
+    }
+
+    private void Set(State state)
+    {
+        Current = state;
+        Changed?.Invoke();
+    }
+
+    /// Download the update: the installer when the release has one, its page otherwise. Never a dead end.
+    public void OpenDownload()
+    {
+        if (Latest is null) return;
+        Process.Start(new ProcessStartInfo((Latest.DownloadUrl ?? Latest.Page).AbsoluteUri) { UseShellExecute = true });
+        MarkSeen();
+    }
+
+    /// Opening the update, or dismissing its banner, is how someone acknowledges it: the banner is shown once per version.
+    public void MarkSeen()
+    {
+        if (Latest is { } release) AppSettings.Update(Services.Root, s => s.SeenUpdateVersion = release.Version);
+        Changed?.Invoke();
+    }
+
+    public bool BannerVisible => Current == State.Available && Latest is { } r && AppSettings.Load(Services.Root).SeenUpdateVersion != r.Version;
+}
+
 /// Downloads started from Explore. Must be started on the UI thread so progress arrives there.
 internal sealed class DownloadService
 {
@@ -170,7 +236,7 @@ internal static class EngineLauncher
         });
     }
 
-    private static string? Locate()
+    public static string? Locate()
     {
         var baseDir = AppContext.BaseDirectory;
         foreach (var candidate in new[] { Path.Combine(baseDir, "Engine", "Muro.Engine.exe"), Path.Combine(baseDir, "Muro.Engine.exe") })

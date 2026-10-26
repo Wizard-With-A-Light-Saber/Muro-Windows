@@ -148,7 +148,12 @@ internal sealed class WallpaperManager : IDisposable
             foreach (var slot in _slots.Values) Arm(slot, evaluate: false);
         }
         var speed = Math.Clamp(config.PlaybackSpeed ?? 1.0, 0.25, 4.0);
-        foreach (var slot in _slots.Values) slot.Player.Speed = speed;
+        foreach (var slot in _slots.Values)
+        {
+            if (Math.Abs(slot.Player.Speed - speed) < 0.001) continue;
+            slot.Player.Speed = speed;
+            Log.Info($"{slot.Monitor.DeviceName}: speed {speed}x");
+        }
         Evaluate();
     }
 

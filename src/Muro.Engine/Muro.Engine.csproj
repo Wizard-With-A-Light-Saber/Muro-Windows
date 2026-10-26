@@ -1,6 +1,9 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <OutputType>Exe</OutputType>
+    <!-- WinExe: started at sign-in or by the app it must not open a console window. Program.cs attaches
+         to the parent console for the harness switches such as list-monitors. -->
+    <OutputType>WinExe</OutputType>
+    <ApplicationIcon>..\..\assets\muro.ico</ApplicationIcon>
     <TargetFramework>net8.0-windows10.0.19041.0</TargetFramework>
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <AssemblyName>Muro.Engine</AssemblyName>

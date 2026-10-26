@@ -13,6 +13,7 @@
     <EnableMsixTooling>true</EnableMsixTooling>
     <WindowsSdkPackageVersion>10.0.19041.38</WindowsSdkPackageVersion>
     <ApplicationManifest>app.manifest</ApplicationManifest>
+    <ApplicationIcon>..\..\assets\muro.ico</ApplicationIcon>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="Microsoft.WindowsAppSDK" Version="1.6.250108002" />
@@ -22,6 +23,9 @@
     <ProjectReference Include="..\Muro.Core\Muro.Core.csproj" />
     <ProjectReference Include="..\Muro.Platform\Muro.Platform.csproj" />
     <ProjectReference Include="..\Muro.Playback\Muro.Playback.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\..\assets\muro.ico" Link="muro.ico" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
   <ItemGroup Condition="Exists('..\..\third_party\mpv\libmpv-2.dll')">
     <None Include="..\..\third_party\mpv\libmpv-2.dll" Link="libmpv-2.dll" CopyToOutputDirectory="PreserveNewest" />

@@ -1,0 +1,112 @@
+<Page x:Class="Muro.App.FeaturedPage"
+      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+      xmlns:local="using:Muro.App">
+    <Page.Resources>
+        <DataTemplate x:Key="StripTemplate" x:DataType="local:LibraryItemVm">
+            <Grid Width="112" Height="63" CornerRadius="6" Background="Black" ToolTipService.ToolTip="{x:Bind Title}">
+                <Image Source="{x:Bind Thumb}" Stretch="UniformToFill" />
+            </Grid>
+        </DataTemplate>
+
+        <DataTemplate x:Key="CardTemplate" x:DataType="local:CatalogItemVm">
+            <Grid Width="240" Margin="0,0,12,0" CornerRadius="10"
+                  Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                  BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="1">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+                <Grid Height="135" Background="Black" CornerRadius="10,10,0,0" Tapped="OnPreview">
+                    <Image Source="{x:Bind Thumb}" Stretch="UniformToFill" />
+                    <FontIcon Glyph="&#xE768;" FontSize="26" Foreground="White" Opacity="0.85"
+                              HorizontalAlignment="Center" VerticalAlignment="Center" />
+                    <Border HorizontalAlignment="Left" VerticalAlignment="Top" Margin="8" Padding="8,2" CornerRadius="4"
+                            Background="{ThemeResource AccentFillColorDefaultBrush}" Visibility="{x:Bind NewVisibility, Mode=OneWay}">
+                        <TextBlock Text="NEW" FontSize="11" FontWeight="SemiBold" Foreground="White" />
+                    </Border>
+                </Grid>
+                <StackPanel Grid.Row="1" Padding="12,10,12,12" Spacing="2">
+                    <TextBlock Text="{x:Bind Title}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" />
+                    <TextBlock Text="{x:Bind Category}" Opacity="0.7" FontSize="12" />
+                    <Grid Margin="0,8,0,0" Height="32">
+                        <Button Content="Download" Style="{StaticResource AccentButtonStyle}" HorizontalAlignment="Stretch"
+                                Click="OnDownload" Visibility="{x:Bind DownloadVisibility, Mode=OneWay}" />
+                        <Grid Visibility="{x:Bind ProgressVisibility, Mode=OneWay}" ColumnSpacing="8">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <ProgressBar Value="{x:Bind Progress, Mode=OneWay}" Maximum="100" VerticalAlignment="Center" />
+                            <Button Grid.Column="1" Content="Cancel" Click="OnCancel" />
+                        </Grid>
+                        <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center"
+                                    Visibility="{x:Bind OwnedVisibility, Mode=OneWay}">
+                            <FontIcon Glyph="&#xE73E;" FontSize="14" />
+                            <TextBlock Text="In your library" />
+                        </StackPanel>
+                    </Grid>
+                </StackPanel>
+            </Grid>
+        </DataTemplate>
+
+        <ItemsPanelTemplate x:Key="RowPanel">
+            <StackPanel Orientation="Horizontal" />
+        </ItemsPanelTemplate>
+    </Page.Resources>
+
+    <ScrollViewer>
+        <StackPanel Padding="28,20,28,28" Spacing="14">
+            <InfoBar x:Name="MessageBar" IsOpen="False" />
+            <InfoBar x:Name="ErrorBar" Severity="Warning" IsOpen="False" IsClosable="False">
+                <InfoBar.ActionButton>
+                    <Button Content="Try again" Click="OnRetry" />
+                </InfoBar.ActionButton>
+            </InfoBar>
+
+            <ProgressRing x:Name="Spinner" IsActive="True" Width="48" Height="48" Margin="0,60,0,0" HorizontalAlignment="Center" />
+            <TextBlock x:Name="EmptyText" Visibility="Collapsed" Opacity="0.7" TextWrapping="Wrap"
+                       Text="Nothing to show yet. Featured fills in when Muro can reach the catalog, or once you have a wallpaper in your library." />
+
+            <Grid x:Name="Hero" Height="340" CornerRadius="12" Background="Black" Visibility="Collapsed">
+                <Image x:Name="HeroImage" Stretch="UniformToFill" />
+                <Rectangle>
+                    <Rectangle.Fill>
+                        <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                            <GradientStop Color="#10000000" Offset="0" />
+                            <GradientStop Color="#00000000" Offset="0.35" />
+                            <GradientStop Color="#C8000000" Offset="1" />
+                        </LinearGradientBrush>
+                    </Rectangle.Fill>
+                </Rectangle>
+                <StackPanel VerticalAlignment="Bottom" Padding="28" Spacing="4">
+                    <TextBlock x:Name="HeroEyebrow" Foreground="White" Opacity="0.85" FontSize="12" FontWeight="SemiBold" />
+                    <TextBlock x:Name="HeroTitle" Foreground="White" FontSize="34" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" />
+                    <TextBlock x:Name="HeroMeta" Foreground="White" Opacity="0.85" />
+                    <StackPanel Orientation="Horizontal" Spacing="8" Margin="0,10,0,0">
+                        <Button x:Name="HeroPrimary" Style="{StaticResource AccentButtonStyle}" MinWidth="120" Click="OnHeroPrimary" />
+                        <Button x:Name="HeroPreview" Content="Preview" Click="OnHeroPreview" />
+                        <ProgressBar x:Name="HeroProgress" Width="180" Maximum="100" Visibility="Collapsed" VerticalAlignment="Center" />
+                    </StackPanel>
+                </StackPanel>
+            </Grid>
+
+            <ListView x:Name="HeroStrip" Visibility="Collapsed" SelectionMode="None" IsItemClickEnabled="True" ItemClick="OnHeroPick"
+                      ItemTemplate="{StaticResource StripTemplate}" ItemsPanel="{StaticResource RowPanel}"
+                      ScrollViewer.HorizontalScrollBarVisibility="Auto" ScrollViewer.HorizontalScrollMode="Enabled"
+                      ScrollViewer.VerticalScrollMode="Disabled" ScrollViewer.VerticalScrollBarVisibility="Hidden" />
+
+            <TextBlock x:Name="DropTitle" Text="Latest drop" Style="{StaticResource SubtitleTextBlockStyle}" Margin="0,10,0,0" Visibility="Collapsed" />
+            <ListView x:Name="DropList" Visibility="Collapsed" SelectionMode="None"
+                      ItemTemplate="{StaticResource CardTemplate}" ItemsPanel="{StaticResource RowPanel}"
+                      ScrollViewer.HorizontalScrollBarVisibility="Auto" ScrollViewer.HorizontalScrollMode="Enabled"
+                      ScrollViewer.VerticalScrollMode="Disabled" ScrollViewer.VerticalScrollBarVisibility="Hidden" />
+
+            <TextBlock x:Name="PickTitle" Text="Muro's Pick" Style="{StaticResource SubtitleTextBlockStyle}" Margin="0,10,0,0" Visibility="Collapsed" />
+            <ListView x:Name="PickList" Visibility="Collapsed" SelectionMode="None"
+                      ItemTemplate="{StaticResource CardTemplate}" ItemsPanel="{StaticResource RowPanel}"
+                      ScrollViewer.HorizontalScrollBarVisibility="Auto" ScrollViewer.HorizontalScrollMode="Enabled"
+                      ScrollViewer.VerticalScrollMode="Disabled" ScrollViewer.VerticalScrollBarVisibility="Hidden" />
+        </StackPanel>
+    </ScrollViewer>
+</Page>
