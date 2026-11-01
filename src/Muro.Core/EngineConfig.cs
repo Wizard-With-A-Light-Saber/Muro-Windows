@@ -37,6 +37,9 @@ public sealed class EngineConfig
     /// The Windows accent colour follows the wallpaper on the main display. The user's own colour is kept and comes back when off.
     public bool MatchAccent { get; set; }
 
+    /// Optional effects over the video (audio, mouse, day/night, stats, shader). All off until the user turns one on.
+    public EffectsConfig Effects { get; set; } = new();
+
     /// What the Muro screen saver plays. Null follows the desktop wallpaper.
     public Assignment? ScreenSaver { get; set; }
     /// The still shown on the lock screen (Windows cannot play video there). Null leaves the lock screen alone.

@@ -12,6 +12,7 @@ public sealed class FadeOverlay : IDisposable
     private const string ClassName = "MuroFadeOverlay";
     private const uint WM_PAINT = 0x000F;
     private const uint WS_EX_LAYERED = 0x00080000;
+    private const uint WS_EX_TRANSPARENT = 0x00000020;
     private const uint LWA_ALPHA = 2;
     private static readonly Native.WndProc Proc = WndProc;
     private static readonly Dictionary<nint, FadeOverlay> Live = [];
@@ -22,12 +23,22 @@ public sealed class FadeOverlay : IDisposable
 
     /// <paramref name="imagePath"/> is read into memory at once, so the file can be deleted right away.
     public FadeOverlay(DesktopHost.Target target, int x, int y, int width, int height, string imagePath)
+        : this(target, x, y, width, height, ReadCopy(imagePath)) { }
+
+    private static Bitmap ReadCopy(string path)
     {
-        using (var file = new Bitmap(imagePath)) _picture = new Bitmap(file);
+        using var file = new Bitmap(path);
+        return new Bitmap(file);
+    }
+
+    /// Takes ownership of <paramref name="picture"/>. Click-through, so a permanent overlay never eats desktop clicks.
+    public FadeOverlay(DesktopHost.Target target, int x, int y, int width, int height, Bitmap picture)
+    {
+        _picture = picture;
         Register();
         var origin = new Native.POINT { X = x, Y = y };
         Native.ScreenToClient(target.Parent, ref origin);
-        Handle = Native.CreateWindowEx(WS_EX_LAYERED, ClassName, "Muro fade", Native.WS_CHILD | Native.WS_VISIBLE | Native.WS_CLIPSIBLINGS,
+        Handle = Native.CreateWindowEx(WS_EX_LAYERED | WS_EX_TRANSPARENT, ClassName, "Muro fade", Native.WS_CHILD | Native.WS_VISIBLE | Native.WS_CLIPSIBLINGS,
             origin.X, origin.Y, width, height, target.Parent, 0, Native.GetModuleHandle(null), 0);
         if (Handle == 0) { _picture.Dispose(); throw new InvalidOperationException("overlay window failed"); }
         Live[Handle] = this;
@@ -40,7 +51,6 @@ public sealed class FadeOverlay : IDisposable
 
     /// 255 shows the picture fully, 0 not at all.
     public void SetAlpha(byte alpha) => Native.SetLayeredWindowAttributes(Handle, 0, alpha, LWA_ALPHA);
-
     private static void Register()
     {
         if (_registered) return;

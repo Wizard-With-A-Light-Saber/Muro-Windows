@@ -80,6 +80,47 @@
                 </StackPanel>
             </Border>
 
+            <TextBlock Text="Effects" Style="{StaticResource SectionLabel}" />
+            <Border Style="{StaticResource Card}">
+                <StackPanel Spacing="16">
+                    <TextBlock Style="{StaticResource Hint}" Text="Optional extras drawn over your wallpaper. All are off by default, and each one uses a little extra CPU, GPU and memory. Muro tells you how much before you turn one on." />
+                    <Grid ColumnSpacing="16">
+                        <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
+                        <StackPanel>
+                            <TextBlock Text="Day / night sync" />
+                            <TextBlock x:Name="DayNightNote" Style="{StaticResource Hint}" />
+                        </StackPanel>
+                        <ToggleSwitch x:Name="DayNightSwitch" Grid.Column="1" Toggled="OnEffectToggled" />
+                    </Grid>
+                    <Grid ColumnSpacing="16">
+                        <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
+                        <StackPanel>
+                            <TextBlock Text="Mouse interaction" />
+                            <TextBlock x:Name="CursorNote" Style="{StaticResource Hint}" />
+                        </StackPanel>
+                        <ToggleSwitch x:Name="CursorSwitch" Grid.Column="1" Toggled="OnEffectToggled" />
+                    </Grid>
+                    <Grid ColumnSpacing="16">
+                        <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
+                        <StackPanel>
+                            <TextBlock Text="Audio reactivity" />
+                            <TextBlock x:Name="AudioNote" Style="{StaticResource Hint}" />
+                        </StackPanel>
+                        <ToggleSwitch x:Name="AudioSwitch" Grid.Column="1" Toggled="OnEffectToggled" />
+                    </Grid>
+                    <Grid ColumnSpacing="16">
+                        <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
+                        <StackPanel>
+                            <TextBlock Text="Custom shader" />
+                            <TextBlock x:Name="ShaderNote" Style="{StaticResource Hint}" />
+                            <TextBlock x:Name="ShaderPathText" Style="{StaticResource Hint}" IsTextSelectionEnabled="True" />
+                            <Button Content="Choose shader file" Margin="0,6,0,0" Click="OnShaderBrowse" />
+                        </StackPanel>
+                        <ToggleSwitch x:Name="ShaderSwitch" Grid.Column="1" Toggled="OnEffectToggled" />
+                    </Grid>
+                </StackPanel>
+            </Border>
+
             <TextBlock Text="Energy" Style="{StaticResource SectionLabel}" />
             <Border Style="{StaticResource Card}">
                 <StackPanel Spacing="16">

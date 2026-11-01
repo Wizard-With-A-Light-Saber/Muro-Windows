@@ -19,6 +19,8 @@ internal sealed class WallpaperManager : IDisposable
         public required MpvPlayer Player;
         public required string Video;
         public required string Mode;
+        /// The user shader this player was started with. mpv takes it at start-up, so a change rebuilds the player.
+        public string? Shader;
         public PauseReason Applied = PauseReason.None;
         /// Every reason to hold except Pause After. Transitions are read from this, never from the final
         /// reason, or the heartbeat would re-arm the clock it just fired.
@@ -42,6 +44,7 @@ internal sealed class WallpaperManager : IDisposable
     private readonly Func<EngineConfig> _config;
     private readonly Func<EngineConfig.Assignment, LibraryResolver.Resolved?> _resolve;
     private readonly Dictionary<string, Slot> _slots = new();
+    private readonly EffectsRunner _fx;
     private DesktopHost.Target? _target;
     private HashSet<string>? _covered;
     private nuint _reconcileTimer, _evaluateTimer, _confirmTimer, _retryTimer, _heartbeat;
@@ -53,6 +56,8 @@ internal sealed class WallpaperManager : IDisposable
         _events = events;
         _config = config;
         _resolve = resolve;
+        _fx = new EffectsRunner(events, config, () => _slots.Values
+            .Select(s => new EffectsRunner.Target(s.Player, s.Monitor.Bounds, s.Applied != PauseReason.None, _target)).ToList());
         events.DisplayChanged += () => { Log.Info("display change"); Debounce(ref _reconcileTimer, 500, Reconcile); };
         events.ShellRestarted += () => { RemoveAll(); _target = null; Debounce(ref _reconcileTimer, 1500, Reconcile); };
         events.StateChanged += () => Evaluate();
@@ -105,6 +110,13 @@ internal sealed class WallpaperManager : IDisposable
                 continue;
             }
 
+            var shader = config.Effects.Shader && File.Exists(config.Effects.ShaderPath) ? config.Effects.ShaderPath : null;
+            if (_slots.TryGetValue(monitor.Id, out var started) && started.Shader != shader)
+            {
+                Log.Info($"{monitor.DeviceName}: shader changed; rebuilding");
+                Remove(monitor.Id);
+            }
+
             if (_slots.TryGetValue(monitor.Id, out var slot))
             {
                 if (slot.Monitor.Bounds != monitor.Bounds)
@@ -129,8 +141,8 @@ internal sealed class WallpaperManager : IDisposable
             try
             {
                 var window = new WallpaperWindow(target, (int)monitor.Bounds.X, (int)monitor.Bounds.Y, (int)monitor.Bounds.Width, (int)monitor.Bounds.Height);
-                var player = new MpvPlayer(window.Handle, Path.Combine(AppPaths.Logs, "mpv.log"));
-                var created = new Slot { Monitor = monitor, Window = window, Player = player, Video = "", Mode = "" };
+                var player = new MpvPlayer(window.Handle, Path.Combine(AppPaths.Logs, "mpv.log"), shader: shader);
+                var created = new Slot { Monitor = monitor, Window = window, Player = player, Video = "", Mode = "", Shader = shader };
                 Apply(created, video, assignment.Mode);
                 _slots[monitor.Id] = created;
                 Log.Info($"monitor added: {monitor.DeviceName} {Describe(monitor.Bounds)} dpi={monitor.Dpi} id={monitor.Id}");
@@ -245,7 +257,7 @@ internal sealed class WallpaperManager : IDisposable
     /// Decides pause or play for every monitor from the current system state and open windows.
     public void Evaluate(bool confirming = false)
     {
-        if (_slots.Count == 0) return;
+        if (_slots.Count == 0) { _fx.Sync(); return; }
         // The shell can replace its wallpaper layer a moment after a display change, which takes our
         // windows with it and leaves mpv talking to nothing. Rebuild instead of poking a dead player.
         if (_slots.Values.Any(s => !s.Window.IsAlive))
@@ -290,6 +302,7 @@ internal sealed class WallpaperManager : IDisposable
             Log.Info(slot.Monitor.DeviceName + ": " + (reason == PauseReason.None ? "playing" : "paused (" + reason + ")"));
             slot.Applied = reason;
         }
+        _fx.Sync();   // effects follow the pause state and the config; this is also what runs after every config change
     }
 
     /// Starts this screen Pause After clock again: it plays for the resolved time, then holds on a frame.
@@ -325,6 +338,7 @@ internal sealed class WallpaperManager : IDisposable
     public void Dispose()
     {
         _events.StopTimer(_heartbeat);
+        _fx.Dispose();
         RemoveAll();
     }
 }

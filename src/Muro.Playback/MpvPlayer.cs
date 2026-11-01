@@ -10,7 +10,9 @@ public sealed class MpvPlayer : IDisposable
 {
     private nint _ctx;
 
-    public MpvPlayer(nint hostWindow, string? logFile = null, bool fill = true)
+    /// <param name="shader">A GLSL user shader file. It needs mpv's full shader pipeline, so dumb mode is left off
+    /// (see below); that costs GPU, which is why the shader is an opt-in effect.</param>
+    public MpvPlayer(nint hostWindow, string? logFile = null, bool fill = true, string? shader = null)
     {
         _ctx = MpvNative.mpv_create();
         if (_ctx == 0) throw new MpvException("mpv_create failed");
@@ -36,7 +38,8 @@ public sealed class MpvPlayer : IDisposable
         Opt("scale", "bilinear"); Opt("cscale", "bilinear"); Opt("dscale", "bilinear");
         // Dumb mode skips libplacebo's shader pipeline: measured ~22% vs 31-49% of one core at 4K60.
         // Fine for SDR wallpapers; revisit if HDR content ever matters.
-        Opt("gpu-dumb-mode", "yes"); Opt("gpu-shader-cache", "no"); Opt("icc-cache", "no");
+        Opt("gpu-dumb-mode", shader is null ? "yes" : "no"); Opt("gpu-shader-cache", "no"); Opt("icc-cache", "no");
+        if (shader is not null) Opt("glsl-shaders", shader);
         Opt("dither-depth", "no"); Opt("deband", "no"); Opt("interpolation", "no");
         Opt("video-sync", "audio");
         if (logFile != null && Environment.GetEnvironmentVariable("MURO_MPV_LOG") == "1")
@@ -96,6 +99,14 @@ public sealed class MpvPlayer : IDisposable
     /// Caps output at 30 fps for Efficient mode; 0 restores the source rate.
     public void SetFpsCap(int fps) =>
         Check(MpvNative.mpv_set_property_string(_ctx, "vf", fps > 0 ? $"fps=fps={fps}" : ""), "vf");
+
+    /// Sets any mpv property (brightness, saturation, video-pan-x, ...). Used by the effects.
+    public void SetProperty(string name, string value) =>
+        Check(MpvNative.mpv_set_property_string(_ctx, name, value), name);
+
+    /// Draws ASS-formatted text over the video (the hardware stats); null removes it.
+    public void SetOverlay(string? ass) =>
+        Command("osd-overlay", "1", ass is null ? "none" : "ass-events", ass ?? "");
 
     public string? GetString(string name)
     {

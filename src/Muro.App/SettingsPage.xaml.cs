@@ -54,6 +54,17 @@ public sealed partial class SettingsPage : Page
         QualityBox.ItemsSource = new[] { "Automatic", "Smooth", "Efficient" };
         QualityBox.SelectedIndex = Array.IndexOf(QualityModes, AppSettings.Load(Services.Root).DefaultMode ?? PlaybackMode.Auto) is var q and >= 0 ? q : 0;
 
+        var fx = config.Effects;
+        DayNightSwitch.IsOn = fx.DayNight;
+        CursorSwitch.IsOn = fx.Cursor;
+        AudioSwitch.IsOn = fx.Audio;
+        ShaderSwitch.IsOn = fx.Shader;
+        DayNightNote.Text = Note(EffectCost.DayNight);
+        CursorNote.Text = Note(EffectCost.Cursor);
+        AudioNote.Text = Note(EffectCost.Audio);
+        ShaderNote.Text = Note(EffectCost.Shader);
+        ShaderPathText.Text = string.IsNullOrEmpty(fx.ShaderPath) ? "No shader file chosen" : fx.ShaderPath;
+
         FullscreenSwitch.IsOn = config.PauseOnFullscreen;
         SaverSwitch.IsOn = config.PauseOnBatterySaver;
         LowBatterySwitch.IsOn = config.PauseOnLowBattery;
@@ -151,6 +162,83 @@ public sealed partial class SettingsPage : Page
         if (_loading || QualityBox.SelectedIndex < 0) return;
         var mode = QualityModes[QualityBox.SelectedIndex];
         Change(() => AppSettings.Update(Services.Root, s => s.DefaultMode = mode));
+    }
+
+    // ---- Effects
+
+    private static string Note(EffectCost.Cost c) => c.What + " " + EffectCost.Describe(c);
+
+    private EffectCost.Cost CostOf(ToggleSwitch t) =>
+        t == DayNightSwitch ? EffectCost.DayNight : t == CursorSwitch ? EffectCost.Cursor :
+        t == AudioSwitch ? EffectCost.Audio : EffectCost.Shader;
+
+    /// Turning an effect on first says what it costs and waits for a yes; turning it off needs no question.
+    private async void OnEffectToggled(object sender, RoutedEventArgs e)
+    {
+        if (_loading) return;
+        var toggle = (ToggleSwitch)sender;
+        var on = toggle.IsOn;
+        string? shaderPath = null;
+        if (on)
+        {
+            var cost = CostOf(toggle);
+            var dialog = new ContentDialog
+            {
+                XamlRoot = XamlRoot,
+                Title = "Turn on " + cost.Name + "?",
+                Content = new TextBlock
+                {
+                    TextWrapping = TextWrapping.Wrap,
+                    Text = cost.What + "\n\n" + EffectCost.Describe(cost)
+                        + "\n\nThese are estimates for a 1080p wallpaper; your PC may differ. You can turn it off here at any time.",
+                },
+                PrimaryButtonText = "Turn on",
+                CloseButtonText = "Cancel",
+                DefaultButton = ContentDialogButton.Close,
+            };
+            var yes = await dialog.ShowAsync() == ContentDialogResult.Primary;
+            if (yes && toggle == ShaderSwitch)
+            {
+                var current = EngineConfig.Load(Services.Root).Effects.ShaderPath;
+                shaderPath = File.Exists(current) ? current : await PickShaderAsync();
+                yes = shaderPath is not null;
+            }
+            if (!yes)
+            {
+                _loading = true;
+                toggle.IsOn = false;
+                _loading = false;
+                return;
+            }
+        }
+        Change(() =>
+        {
+            EngineConfig.Update(Services.Root, c =>
+            {
+                if (toggle == DayNightSwitch) c.Effects.DayNight = on;
+                else if (toggle == CursorSwitch) c.Effects.Cursor = on;
+                else if (toggle == AudioSwitch) c.Effects.Audio = on;
+                else { c.Effects.Shader = on; if (shaderPath is not null) c.Effects.ShaderPath = shaderPath; }
+            });
+            if (on) EngineLauncher.EnsureRunning();
+        });
+        Load();
+    }
+
+    private static async Task<string?> PickShaderAsync()
+    {
+        var picker = new Windows.Storage.Pickers.FileOpenPicker();
+        WinRT.Interop.InitializeWithWindow.Initialize(picker, MainWindow.Instance!.Handle);
+        picker.FileTypeFilter.Add(".glsl");
+        picker.FileTypeFilter.Add(".hook");
+        return (await picker.PickSingleFileAsync())?.Path;
+    }
+
+    private async void OnShaderBrowse(object sender, RoutedEventArgs e)
+    {
+        if (await PickShaderAsync() is not { } path) return;
+        Change(() => EngineConfig.Update(Services.Root, c => c.Effects.ShaderPath = path));
+        Load();
     }
 
     // ---- Energy

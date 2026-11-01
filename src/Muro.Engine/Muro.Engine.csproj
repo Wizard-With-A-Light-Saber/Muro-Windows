@@ -13,6 +13,10 @@
     <ProjectReference Include="..\Muro.Platform\Muro.Platform.csproj" />
     <ProjectReference Include="..\Muro.Playback\Muro.Playback.csproj" />
   </ItemGroup>
+  <ItemGroup>
+    <!-- Audio reactivity: WASAPI loopback capture of whatever the PC is playing. -->
+    <PackageReference Include="NAudio.Wasapi" Version="2.2.1" />
+  </ItemGroup>
   <ItemGroup Condition="Exists('..\..\third_party\mpv\libmpv-2.dll')">
     <None Include="..\..\third_party\mpv\libmpv-2.dll" Link="libmpv-2.dll" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
