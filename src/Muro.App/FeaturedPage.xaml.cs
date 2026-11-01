@@ -157,7 +157,7 @@ public sealed partial class FeaturedPage : Page
         if (_hero is not { } entry || _applying) return;
 
         var efficient = AppSettings.Load(Services.Root).ModeFor(entry) == PlaybackMode.Efficient;
-        var slow = efficient && entry.Fps > EfficientVariant.MinimumFps && entry.EfficientFile is null;
+        var slow = efficient && EfficientVariant.Needs(entry);
         _applying = true;
         HeroPrimary.IsEnabled = false;
         HeroProgress.Value = 0;

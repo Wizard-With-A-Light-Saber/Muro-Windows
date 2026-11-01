@@ -73,6 +73,36 @@ public class MediaTests
     }
 
     [Fact]
+    public void Args_Efficient_ScalesInTheSameFilterAsTheFrameRate_AndBitrateFollowsTheOutputSize()
+    {
+        var encoder = new EncoderChoice("hevc_qsv", "", true, "hevc");
+        var info = new VideoInfo("hevc", 3840, 2160, 25, 10);
+
+        var scaled = Transcoder.BuildArgs(encoder, "in.mov", "out.mov", info, false, (1920, 1080));
+        Assert.Equal("scale=1920:1080:flags=lanczos", scaled[scaled.IndexOf("-vf") + 1]);   // 25 fps is kept
+        Assert.Equal(1, scaled.Count(a => a == "-vf"));
+        Assert.Equal((Transcoder.RecommendedBitrate(1920, 1080, 25) / 1000) + "k", scaled[scaled.IndexOf("-b:v") + 1]);
+
+        var both = Transcoder.BuildArgs(encoder, "in.mov", "out.mov", info with { Fps = 60 }, true, (1920, 1080));
+        Assert.Equal("fps=30,scale=1920:1080:flags=lanczos", both[both.IndexOf("-vf") + 1]);
+    }
+
+    [Theory]
+    [InlineData(3840, 2160, 1920, 1080, 1920, 1080)]   // 4K on a 1080p screen
+    [InlineData(2560, 1440, 1920, 1080, 1920, 1080)]   // 1440p on a 1080p screen
+    [InlineData(3840, 1600, 1920, 1080, 2592, 1080)]   // ultrawide covers the height, the player crops the sides
+    public void TargetSize_ShrinksOnlyAWallpaperMuchBiggerThanTheScreen(int w, int h, int sw, int sh, int tw, int th) =>
+        Assert.Equal((tw, th), EfficientVariant.TargetSize(w, h, (sw, sh)));
+
+    [Theory]
+    [InlineData(1920, 1080, 1920, 1080)]
+    [InlineData(2304, 1296, 1920, 1080)]   // 1.2x: not worth a re-encode
+    [InlineData(3840, 2160, 3840, 2160)]   // a 4K screen keeps 4K
+    [InlineData(3840, 2160, 0, 0)]         // screen unknown: never shrink
+    public void TargetSize_LeavesTheRestAlone(int w, int h, int sw, int sh) =>
+        Assert.Null(EfficientVariant.TargetSize(w, h, (sw, sh)));
+
+    [Fact]
     public void AlreadyImported_MatchesByFingerprint_ThenByNameAndLengthForOlderImports()
     {
         var withPrint = new WallpaperEntry { Id = "1", Title = "x", Category = WallpaperEntry.ImportedCategory, SourceFingerprint = "abc", Duration = 5 };

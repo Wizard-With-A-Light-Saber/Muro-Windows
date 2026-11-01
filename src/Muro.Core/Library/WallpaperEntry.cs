@@ -30,6 +30,16 @@ public sealed class WallpaperEntry
     public int? PauseAfterSeconds { get; set; }
     /// For an import: Fingerprint.Of the source file, so importing it twice is noticed.
     public string? SourceFingerprint { get; set; }
+    /// Effects (day/night, mouse, audio) for this wallpaper alone. Null follows the Settings page.
+    public EffectsConfig? Effects { get; set; }
+    /// A colour look (see <see cref="Media.Looks"/>) baked into the screen-sized copy. Null is the plain wallpaper.
+    public string? Look { get; set; }
+    /// The look the screen-sized copy was actually made with, so a change of look is noticed and the copy remade.
+    public string? BakedLook { get; set; }
+
+    /// <see cref="Look"/>, or null when it is empty or a name this version does not know.
+    [JsonIgnore]
+    public string? ActiveLook => Media.Looks.Filter(Look) is null ? null : Look;
 
     /// Every file this wallpaper owns. Deleting a wallpaper deletes exactly these.
     [JsonIgnore]

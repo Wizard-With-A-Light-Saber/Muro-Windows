@@ -20,6 +20,7 @@ public partial class App : Application
 
     protected override void OnLaunched(LaunchActivatedEventArgs args)
     {
+        Muro.Platform.Monitors.All();   // tells EfficientVariant how big the screen is
         _window = new MainWindow();
         _window.Activate();
     }

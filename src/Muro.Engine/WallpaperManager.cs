@@ -21,6 +21,8 @@ internal sealed class WallpaperManager : IDisposable
         public required string Mode;
         /// The user shader this player was started with. mpv takes it at start-up, so a change rebuilds the player.
         public string? Shader;
+        /// This wallpaper's own effects; null follows the Settings page.
+        public EffectsConfig? Effects;
         public PauseReason Applied = PauseReason.None;
         /// Every reason to hold except Pause After. Transitions are read from this, never from the final
         /// reason, or the heartbeat would re-arm the clock it just fired.
@@ -57,7 +59,7 @@ internal sealed class WallpaperManager : IDisposable
         _config = config;
         _resolve = resolve;
         _fx = new EffectsRunner(events, config, () => _slots.Values
-            .Select(s => new EffectsRunner.Target(s.Player, s.Monitor.Bounds, s.Applied != PauseReason.None, _target)).ToList());
+            .Select(s => new EffectsRunner.Target(s.Player, s.Monitor.Bounds, s.Applied != PauseReason.None, _target, s.Effects ?? config().Effects)).ToList());
         events.DisplayChanged += () => { Log.Info("display change"); Debounce(ref _reconcileTimer, 500, Reconcile); };
         events.ShellRestarted += () => { RemoveAll(); _target = null; Debounce(ref _reconcileTimer, 1500, Reconcile); };
         events.StateChanged += () => Evaluate();
@@ -125,6 +127,7 @@ internal sealed class WallpaperManager : IDisposable
                     slot.Window.Move((int)monitor.Bounds.X, (int)monitor.Bounds.Y, (int)monitor.Bounds.Width, (int)monitor.Bounds.Height);
                 }
                 slot.Monitor = monitor;
+                slot.Effects = video.Effects;
                 if (slot.WallpaperPauseAfter != video.PauseAfterSeconds)
                 {
                     slot.WallpaperPauseAfter = video.PauseAfterSeconds;
@@ -142,7 +145,7 @@ internal sealed class WallpaperManager : IDisposable
             {
                 var window = new WallpaperWindow(target, (int)monitor.Bounds.X, (int)monitor.Bounds.Y, (int)monitor.Bounds.Width, (int)monitor.Bounds.Height);
                 var player = new MpvPlayer(window.Handle, Path.Combine(AppPaths.Logs, "mpv.log"), shader: shader);
-                var created = new Slot { Monitor = monitor, Window = window, Player = player, Video = "", Mode = "", Shader = shader };
+                var created = new Slot { Monitor = monitor, Window = window, Player = player, Video = "", Mode = "", Shader = shader, Effects = video.Effects };
                 Apply(created, video, assignment.Mode);
                 _slots[monitor.Id] = created;
                 Log.Info($"monitor added: {monitor.DeviceName} {Describe(monitor.Bounds)} dpi={monitor.Dpi} id={monitor.Id}");

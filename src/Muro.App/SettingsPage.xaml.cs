@@ -59,6 +59,10 @@ public sealed partial class SettingsPage : Page
         CursorSwitch.IsOn = fx.Cursor;
         AudioSwitch.IsOn = fx.Audio;
         ShaderSwitch.IsOn = fx.Shader;
+        VisualizerBox.ItemsSource = VisualizerStyles.All.Select(s => s.Label).ToList();
+        VisualizerBox.SelectedIndex = Math.Max(0, VisualizerStyles.All.ToList().FindIndex(s => s.Name == VisualizerStyles.Normalize(fx.Visualizer ?? "spectrum")));
+        VisualizerSwitch.IsOn = fx.Visualizer is not null;
+        VisualizerNote.Text = Note(EffectCost.Visualizer);
         DayNightNote.Text = Note(EffectCost.DayNight);
         CursorNote.Text = Note(EffectCost.Cursor);
         AudioNote.Text = Note(EffectCost.Audio);
@@ -170,7 +174,16 @@ public sealed partial class SettingsPage : Page
 
     private EffectCost.Cost CostOf(ToggleSwitch t) =>
         t == DayNightSwitch ? EffectCost.DayNight : t == CursorSwitch ? EffectCost.Cursor :
-        t == AudioSwitch ? EffectCost.Audio : EffectCost.Shader;
+        t == AudioSwitch ? EffectCost.Audio : t == VisualizerSwitch ? EffectCost.Visualizer : EffectCost.Shader;
+
+    private string SelectedVisualizer() => VisualizerStyles.All[Math.Max(0, VisualizerBox.SelectedIndex)].Name;
+
+    private void OnVisualizerStyleChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (_loading || VisualizerBox.SelectedIndex < 0 || !VisualizerSwitch.IsOn) return;
+        var style = SelectedVisualizer();
+        Change(() => EngineConfig.Update(Services.Root, c => c.Effects.Visualizer = style));
+    }
 
     /// Turning an effect on first says what it costs and waits for a yes; turning it off needs no question.
     private async void OnEffectToggled(object sender, RoutedEventArgs e)
@@ -178,6 +191,7 @@ public sealed partial class SettingsPage : Page
         if (_loading) return;
         var toggle = (ToggleSwitch)sender;
         var on = toggle.IsOn;
+        var visualizerStyle = SelectedVisualizer();
         string? shaderPath = null;
         if (on)
         {
@@ -218,6 +232,7 @@ public sealed partial class SettingsPage : Page
                 if (toggle == DayNightSwitch) c.Effects.DayNight = on;
                 else if (toggle == CursorSwitch) c.Effects.Cursor = on;
                 else if (toggle == AudioSwitch) c.Effects.Audio = on;
+                else if (toggle == VisualizerSwitch) c.Effects.Visualizer = on ? visualizerStyle : null;
                 else { c.Effects.Shader = on; if (shaderPath is not null) c.Effects.ShaderPath = shaderPath; }
             });
             if (on) EngineLauncher.EnsureRunning();

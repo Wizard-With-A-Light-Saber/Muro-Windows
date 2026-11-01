@@ -1,5 +1,6 @@
 using System.Runtime.InteropServices;
 using Muro.Core;
+using Muro.Core.Media;
 
 namespace Muro.Platform;
 
@@ -23,6 +24,8 @@ public static class Monitors
                 new Rect(r.Left, r.Top, r.Right - r.Left, r.Bottom - r.Top), (info.dwFlags & 1) != 0, dpi == 0 ? 96 : dpi));
             return true;
         }, 0);
+        if (list.Count > 0)
+            EfficientVariant.Screen = list.Select(m => ((int)m.Bounds.Width, (int)m.Bounds.Height)).MaxBy(s => (long)s.Item1 * s.Item2);
         return list;
     }
 

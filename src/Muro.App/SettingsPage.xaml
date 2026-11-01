@@ -109,6 +109,15 @@
                         <ToggleSwitch x:Name="AudioSwitch" Grid.Column="1" Toggled="OnEffectToggled" />
                     </Grid>
                     <Grid ColumnSpacing="16">
+                        <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
+                        <StackPanel>
+                            <TextBlock Text="Audio visualiser" />
+                            <TextBlock x:Name="VisualizerNote" Style="{StaticResource Hint}" />
+                        </StackPanel>
+                        <ComboBox x:Name="VisualizerBox" Grid.Column="1" Width="150" SelectionChanged="OnVisualizerStyleChanged" />
+                        <ToggleSwitch x:Name="VisualizerSwitch" Grid.Column="2" Toggled="OnEffectToggled" />
+                    </Grid>
+                    <Grid ColumnSpacing="16">
                         <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
                         <StackPanel>
                             <TextBlock Text="Custom shader" />

@@ -4,21 +4,24 @@ using System.Runtime.InteropServices;
 using Muro.Core;
 using Muro.Platform;
 using Muro.Playback;
-using NAudio.Wave;
 using NAudio.CoreAudioApi;
+using NAudio.CoreAudioApi.Interfaces;
+using NAudio.Wave;
 
 namespace Muro.Engine;
 
-/// The optional effects: day/night tint, mouse parallax, audio flash.
+/// The optional effects: day/night tint, mouse parallax, audio flash. Each screen has its own set (its wallpaper's
+/// own, or the Settings page's).
 ///   - the tint and the flash are click-through windows over the wallpaper that the desktop compositor blends,
 ///     because mpv's brightness control does nothing in the low-cost playback mode;
 ///   - the mouse effect nudges mpv's own pan, which is plain geometry and works in that mode;
-///   - one message-loop timer, as slow as the enabled effects allow (50 ms audio/mouse, 2 s stats, 60 s clock);
+///   - one message-loop timer, as slow as the enabled effects allow (50 ms mouse, 80 ms audio, 60 s clock);
 ///   - values are only written when they changed, so a still mouse or silence costs nothing;
-///   - audio is loopback-captured only while it is wanted, and reduced to one loudness number per buffer.
+///   - audio is loopback-captured only while some playing screen wants it, reduced to one loudness number per
+///     buffer, and follows the default output device when that changes (headphones plugged in).
 internal sealed class EffectsRunner : IDisposable
 {
-    public readonly record struct Target(MpvPlayer Player, Rect Bounds, bool Paused, DesktopHost.Target? Host);
+    public readonly record struct Target(MpvPlayer Player, Rect Bounds, bool Paused, DesktopHost.Target? Host, EffectsConfig Fx);
 
     // Zoom in a little while the pointer effect is on, so panning never shows the edge of the picture.
     private const double ZoomWhenPanning = 0.04, PanAmplitude = 0.012;
@@ -33,13 +36,27 @@ internal sealed class EffectsRunner : IDisposable
         public nint Parent;
         public Rect Bounds;
         public TintLayer? Dim, Flash;
+        public VisualizerLayer? Viz;
 
         public void DisposeLayers()
         {
-            Dim?.Dispose(); Flash?.Dispose();
-            Dim = Flash = null;
+            Dim?.Dispose(); Flash?.Dispose(); Viz?.Dispose();
+            Dim = Flash = null; Viz = null;
             Sent.Remove("dim"); Sent.Remove("flash");
         }
+    }
+
+    /// Tells the runner when the default output device changes, on COM's thread.
+    private sealed class DeviceWatcher(Action defaultChanged) : IMMNotificationClient
+    {
+        public void OnDefaultDeviceChanged(DataFlow flow, Role role, string defaultDeviceId)
+        {
+            if (flow == DataFlow.Render && role == Role.Multimedia) defaultChanged();
+        }
+        public void OnDeviceStateChanged(string deviceId, DeviceState newState) { }
+        public void OnDeviceAdded(string pwstrDeviceId) { }
+        public void OnDeviceRemoved(string deviceId) { }
+        public void OnPropertyValueChanged(string pwstrDeviceId, PropertyKey key) { }
     }
 
     private readonly SystemEvents _events;
@@ -51,11 +68,24 @@ internal sealed class EffectsRunner : IDisposable
     private string _key = "";
     private double _pulse;
     private long _audioRetryAt;
-    private bool _layerErrorLogged;
+    private bool _layerErrorLogged, _vizLogged;
 
     private WasapiLoopbackCapture? _capture;
+    private MMDeviceEnumerator? _enumerator;
+    private DeviceWatcher? _watcher;
     private volatile float _level, _peak = 0.02f;
     private long _audioAt;
+
+    // What the visualiser reads: the last few thousand mono samples (written by the capture thread, copied out on the
+    // timer) and each channel's loudness. A torn read at worst shows one odd frame.
+    private const int RingSize = 4096;
+    private readonly float[] _ring = new float[RingSize];
+    private int _ringWrite, _sampleRate = 48000, _channels = 2;
+    private volatile float _vuLeft, _vuRight;
+    private readonly float[] _mono = new float[1536];
+    private readonly VizFrame _frame = new();
+    private float _bassAverage;
+    private int _beatCooldown;
 
     public EffectsRunner(SystemEvents events, Func<EngineConfig> config, Func<List<Target>> targets)
     {
@@ -64,21 +94,21 @@ internal sealed class EffectsRunner : IDisposable
         _targets = targets;
     }
 
-    /// Brings the timer and the audio capture in line with the config and which screens are playing.
+    /// Brings the timer and the audio capture in line with each screen's effects and which screens are playing.
     /// Cheap and safe to call often.
     public void Sync()
     {
-        var fx = _config().Effects;
         var targets = _targets();
         Prune(targets);
-        var want = fx.Any && targets.Any(t => !t.Paused);
-        // Every flash step is a repaint of the whole screen layer, so audio alone runs at about 12 a second.
-        var interval = !want ? 0 : fx.Cursor ? 50 : fx.Audio ? 80 : 60000;
-        // The clock effect must keep running while paused (a still frame should still go dark at night).
-        if (interval == 0 && fx.DayNight) interval = 60000;
-        var key = $"{fx.DayNight}{fx.Cursor}{fx.Audio}";
+        var live = targets.Where(t => !t.Paused && t.Fx.Any).ToList();
+        var wantViz = live.Any(t => t.Fx.Visualizer is not null);
+        var wantAudio = wantViz || live.Any(t => t.Fx.Audio);
+        // The clock effect keeps running while paused: a still frame should still go dark at night.
+        // Every flash step repaints a whole screen layer, so audio alone runs at about 12 a second; the visualiser
+        // needs about 30 to look smooth.
+        var interval = wantViz ? 33 : live.Any(t => t.Fx.Cursor) ? 50 : wantAudio ? 80 : live.Count > 0 || targets.Any(t => t.Fx.DayNight) ? 60000 : 0;
+        var key = string.Join('|', targets.Select(t => $"{t.Fx.DayNight}{t.Fx.Cursor}{t.Fx.Audio}{t.Fx.Visualizer}{t.Paused}"));
 
-        var wantAudio = want && fx.Audio;
         if (wantAudio && _capture is null && Environment.TickCount64 >= _audioRetryAt) StartAudio();
         else if (!wantAudio && _capture is not null) StopAudio();
 
@@ -91,8 +121,7 @@ internal sealed class EffectsRunner : IDisposable
         }
         _key = key;
         // A screen that appeared since the last tick gets the effects at once, not after a slow interval.
-        if (changed || (fx.Any && targets.Any(t => !_state.ContainsKey(t.Player)))) Tick();
-        if (!fx.Any) _state.Clear();   // the tick above has just taken every layer down and the pan back to neutral
+        if (changed || targets.Any(t => t.Fx.Any && !_state.ContainsKey(t.Player))) Tick();
     }
 
     /// Players that are gone (a monitor unplugged, a wallpaper rebuilt) take their layers with them: the layers are
@@ -108,13 +137,12 @@ internal sealed class EffectsRunner : IDisposable
 
     private void Tick()
     {
-        var fx = _config().Effects;
         var targets = _targets();
         Prune(targets);
         var now = Environment.TickCount64;
 
-        var dim = fx.DayNight ? (byte)Math.Round(EffectMath.Night(DateTime.Now.TimeOfDay) * NightAlpha) : (byte)0;
-        if (fx.Audio)
+        var dim = (byte)Math.Round(EffectMath.Night(DateTime.Now.TimeOfDay) * NightAlpha);
+        if (targets.Any(t => t.Fx.Audio))
         {
             var heard = now - Interlocked.Read(ref _audioAt) < 300 ? _level : 0f;
             _pulse = Math.Max(heard, _pulse * 0.75);   // quick to rise, slower to fall
@@ -122,27 +150,38 @@ internal sealed class EffectsRunner : IDisposable
         else _pulse = 0;
         // Steps of 2 give nine levels instead of seventeen: fewer repaints, and the eye cannot tell.
         var flash = (byte)(Math.Round(_pulse * FlashAlpha / 2) * 2);
-
-        var cursor = fx.Cursor ? SystemLoad.Cursor() : null;
+        var cursor = targets.Any(t => t.Fx.Cursor) ? SystemLoad.Cursor() : null;
+        if (targets.Any(t => !t.Paused && t.Fx.Visualizer is not null)) BuildFrame(now);
 
         foreach (var t in targets)
         {
+            var fx = t.Fx;
             if (!_state.TryGetValue(t.Player, out var s)) _state[t.Player] = s = new PlayerFx();
             if (t.Host is { } host)
             {
                 if (s.Parent != host.Parent || s.Bounds != t.Bounds) { s.DisposeLayers(); s.Parent = host.Parent; s.Bounds = t.Bounds; }
-                s.Dim = Layer(s.Dim, dim > 0, () => new TintLayer(host, t.Bounds, Night));
-                if (s.Dim is not null && Changed(s, "dim", dim)) s.Dim.SetAlpha(dim);
+                var screenDim = fx.DayNight ? dim : (byte)0;
+                s.Dim = Layer(s.Dim, screenDim > 0, () => new TintLayer(host, t.Bounds, Night));
+                if (s.Dim is not null && Changed(s, "dim", screenDim)) s.Dim.SetAlpha(screenDim);
+                // A frozen screen shows no visualiser: it would be bars with no music behind a still picture.
+                if (t.Paused && s.Viz is not null) { s.Viz.Dispose(); s.Viz = null; }
                 if (t.Paused && fx.Any) continue;   // the tint above stays; nothing else moves on a frozen screen
                 s.Flash = Layer(s.Flash, fx.Audio, () => new TintLayer(host, t.Bounds, Color.White));
                 if (s.Flash is not null && Changed(s, "flash", flash)) s.Flash.SetAlpha(flash);
+                s.Viz = Layer(s.Viz, fx.Visualizer is not null, () => new VisualizerLayer(host, t.Bounds));
+                s.Viz?.Draw(VisualizerStyles.Normalize(fx.Visualizer!), _frame);
+                if (s.Viz is { Presented: > 0 } && !_vizLogged)
+                {
+                    _vizLogged = true;
+                    Log.Info("visualiser: first frame painted");
+                }
             }
             else if (t.Paused && fx.Any) continue;
 
             // Pan and zoom are mpv geometry, so unlike brightness they work in the low-cost mode. Written only
             // while the effect is on, and once more to put the picture back when it goes off.
             if (!fx.Cursor && !s.Sent.ContainsKey("video-zoom")) continue;
-            var (tx, ty) = cursor is { } c ? EffectMath.CursorOn(t.Bounds, c.X, c.Y) : (0, 0);
+            var (tx, ty) = cursor is { } c && fx.Cursor ? EffectMath.CursorOn(t.Bounds, c.X, c.Y) : (0, 0);
             s.PanX += (-tx * PanAmplitude - s.PanX) * 0.2;
             s.PanY += (-ty * PanAmplitude - s.PanY) * 0.2;
             var zoom = fx.Cursor ? ZoomWhenPanning : 0;
@@ -192,9 +231,16 @@ internal sealed class EffectsRunner : IDisposable
         {
             var capture = new WasapiLoopbackCapture();
             if (capture.WaveFormat.BitsPerSample != 32) { capture.Dispose(); throw new NotSupportedException("the output is not 32-bit float"); }
+            _sampleRate = capture.WaveFormat.SampleRate;
+            _channels = Math.Max(1, capture.WaveFormat.Channels);
             capture.DataAvailable += OnAudio;
+            // The device went away or stopped: start again on whatever is the default now.
+            capture.RecordingStopped += (_, e) => { if (e.Exception is not null && ReferenceEquals(_capture, capture)) RestartAudioSoon(); };
             capture.StartRecording();
             _capture = capture;
+            _enumerator = new MMDeviceEnumerator();
+            _watcher = new DeviceWatcher(RestartAudioSoon);
+            _enumerator.RegisterEndpointNotificationCallback(_watcher);
         }
         catch (Exception ex)
         {
@@ -203,20 +249,80 @@ internal sealed class EffectsRunner : IDisposable
         }
     }
 
-    // Runs on NAudio's capture thread, about every 50 ms: one loudness number, scaled by a slowly falling peak.
+    /// Called from audio threads. Waits half a second, since Windows reports a device change a moment before the
+    /// new device is ready, then drops the capture; <see cref="Sync"/> starts a fresh one on the new default.
+    private void RestartAudioSoon() => _events.Post(() => _events.StartTimer(500, () => { StopAudio(); Sync(); }));
+
+    // Runs on NAudio's capture thread, about every 80 ms: one loudness number, scaled by a slowly falling peak.
     private void OnAudio(object? sender, WaveInEventArgs e)
     {
         var samples = MemoryMarshal.Cast<byte, float>(e.Buffer.AsSpan(0, e.BytesRecorded / 4 * 4));
         var rms = (float)EffectMath.Rms(samples);
         _peak = Math.Max(Math.Max(rms, 0.02f), _peak * 0.998f);
         _level = Math.Min(1f, rms / _peak);
+
+        // For the visualiser: keep the newest mono samples and each channel's loudness.
+        var ch = _channels;
+        var frames = samples.Length / ch;
+        double left = 0, right = 0;
+        var write = _ringWrite;
+        for (var i = 0; i < frames; i++)
+        {
+            var l = samples[i * ch];
+            var r = ch > 1 ? samples[i * ch + 1] : l;
+            left += l * l; right += r * r;
+            _ring[write++ & (RingSize - 1)] = (l + r) * 0.5f;
+        }
+        _ringWrite = write;
+        if (frames > 0)
+        {
+            _vuLeft = Spectrum.ToUnit(Math.Sqrt(left / frames));
+            _vuRight = Spectrum.ToUnit(Math.Sqrt(right / frames));
+        }
         Interlocked.Exchange(ref _audioAt, Environment.TickCount64);
+    }
+
+    /// Fills <see cref="_frame"/> from the newest audio: frequency bands, a steady waveform window, channel levels and a
+    /// beat flag. Runs on the timer, only while a screen is drawing a visualiser.
+    private void BuildFrame(long now)
+    {
+        var f = _frame;
+        f.Silent = now - Interlocked.Read(ref _audioAt) > 300;
+        if (f.Silent)
+        {
+            Array.Clear(f.Bands); Array.Clear(f.Wave);
+            f.Left = f.Right = f.Bass = 0; f.Beat = false;
+            return;
+        }
+        var end = _ringWrite;
+        for (var i = 0; i < _mono.Length; i++) _mono[i] = _ring[(end - _mono.Length + i) & (RingSize - 1)];
+        Spectrum.Bands(_mono.AsSpan(_mono.Length - Spectrum.FftSize), _sampleRate, f.Bands);
+
+        // Start the waveform at a rising zero crossing so the line holds still instead of scrolling.
+        var start = 0;
+        for (var i = 0; i < 512; i++) if (_mono[i] < 0 && _mono[i + 1] >= 0) { start = i; break; }
+        for (var i = 0; i < VizFrame.WaveCount; i++) f.Wave[i] = _mono[start + i * 4];
+
+        f.Left = _vuLeft; f.Right = _vuRight;
+        var bass = 0f;
+        for (var i = 0; i < 6; i++) bass += f.Bands[i];
+        f.Bass = bass /= 6;
+        _bassAverage = _bassAverage * 0.95f + bass * 0.05f;
+        _beatCooldown = Math.Max(0, _beatCooldown - 1);
+        f.Beat = _beatCooldown == 0 && bass > _bassAverage * 1.3f + 0.08f;
+        if (f.Beat) _beatCooldown = 6;
     }
 
     private void StopAudio()
     {
         var capture = _capture;
         _capture = null;
+        if (_enumerator is not null)
+        {
+            try { if (_watcher is not null) _enumerator.UnregisterEndpointNotificationCallback(_watcher); } catch { }
+            _enumerator.Dispose();
+        }
+        _enumerator = null; _watcher = null;
         if (capture is null) return;
         capture.DataAvailable -= OnAudio;
         try { capture.Dispose(); } catch (Exception ex) { Log.Info("audio effect stop: " + ex.Message); }

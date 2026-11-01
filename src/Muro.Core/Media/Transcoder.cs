@@ -50,10 +50,11 @@ public static class Transcoder
         (int)Math.Clamp(width * (double)height * fps * 0.045, 3_000_000, 25_000_000);
 
     /// The ffmpeg command line for one encode. Pure, so it is tested without ffmpeg.
-    public static List<string> BuildArgs(EncoderChoice encoder, string input, string output, VideoInfo info, bool halveFps)
+    public static List<string> BuildArgs(EncoderChoice encoder, string input, string output, VideoInfo info, bool halveFps, (int Width, int Height)? scaleTo = null, string? lookFilter = null)
     {
         var outFps = halveFps ? info.Fps / 2 : info.Fps;
-        var bitrate = RecommendedBitrate(info.Width, info.Height, outFps);
+        var (outWidth, outHeight) = scaleTo ?? (info.Width, info.Height);
+        var bitrate = RecommendedBitrate(outWidth, outHeight, outFps);
         var gop = Math.Max(1, (int)Math.Round(outFps) * 2);
         var args = new List<string>
         {
@@ -61,7 +62,12 @@ public static class Transcoder
             "-i", input, "-map", "0:v:0", "-an", "-sn", "-dn",
         };
         // Dropping every second frame is exact for 2:1 sources (60 to 30, 59.94 to 29.97).
-        if (halveFps) { args.Add("-vf"); args.Add("fps=" + outFps.ToString("0.###", CultureInfo.InvariantCulture)); }
+        // One -vf: ffmpeg keeps only the last one given.
+        var filters = new List<string>();
+        if (halveFps) filters.Add("fps=" + outFps.ToString("0.###", CultureInfo.InvariantCulture));
+        if (scaleTo is { } size) filters.Add($"scale={size.Width}:{size.Height}:flags=lanczos");
+        if (lookFilter is not null) filters.Add(lookFilter);   // after the scale, so it runs on fewer pixels
+        if (filters.Count > 0) { args.Add("-vf"); args.Add(string.Join(",", filters)); }
         args.AddRange(["-pix_fmt", "yuv420p", "-c:v", encoder.Name]);
 
         var kbps = (bitrate / 1000).ToString(CultureInfo.InvariantCulture);
@@ -87,7 +93,7 @@ public static class Transcoder
     /// Returns what the output is. The caller owns the output path and removes it on failure.
     public static async Task<VideoInfo> TranscodeAsync(
         string ffmpeg, string input, string output, VideoInfo info, bool halveFps,
-        IProgress<double>? progress, CancellationToken ct)
+        IProgress<double>? progress, CancellationToken ct, (int Width, int Height)? scaleTo = null, string? lookFilter = null)
     {
         var encoders = await Encoders.DetectAsync(ffmpeg, ct).ConfigureAwait(false);
         if (encoders.Count == 0) throw new TranscodeException("No video encoder works on this PC, so the video cannot be converted.");
@@ -96,11 +102,11 @@ public static class Transcoder
         foreach (var encoder in encoders)
         {
             try { File.Delete(output); } catch { }
-            var (code, stderr) = await Ffmpeg.RunAsync(ffmpeg, BuildArgs(encoder, input, output, info, halveFps),
+            var (code, stderr) = await Ffmpeg.RunAsync(ffmpeg, BuildArgs(encoder, input, output, info, halveFps, scaleTo, lookFilter),
                 null, progress, info.Duration, ct).ConfigureAwait(false);
             if (code == 0 && File.Exists(output))
                 return await Ffmpeg.ProbeAsync(ffmpeg, output, ct).ConfigureAwait(false)
-                       ?? info with { Fps = halveFps ? info.Fps / 2 : info.Fps };
+                       ?? info with { Fps = halveFps ? info.Fps / 2 : info.Fps, Width = scaleTo?.Width ?? info.Width, Height = scaleTo?.Height ?? info.Height };
             failures.Add(encoder.Name + ": " + LastLine(stderr));
         }
         try { File.Delete(output); } catch { }

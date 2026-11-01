@@ -135,6 +135,7 @@ internal sealed class ScheduleRunner : IDisposable
         var config = EngineConfig.Load(_root);
         // Each step gets the mode the default setting gives that wallpaper: Automatic puts only the heaviest ones
         // (4K at 50 fps or more) on the 30 fps copy, so a playlist moves between modes as it moves between wallpapers.
+        Monitors.All();   // tells EfficientVariant how big the screen is, which Automatic needs
         var entry = LibraryManifest.Load(_root).Find(id);
         var mode = AppSettings.Load(_root).ModeFor(entry);
         if (mode == PlaybackMode.Efficient && _surface != Surface.LockScreen && entry is not null) EnsureVariant(entry);
@@ -162,14 +163,14 @@ internal sealed class ScheduleRunner : IDisposable
     /// notices library.json and switches to it.
     private static void EnsureVariant(WallpaperEntry entry)
     {
-        if (entry.EfficientFile is not null || entry.Fps <= EfficientVariant.MinimumFps || Ffmpeg.Locate() is not { } ffmpeg) return;
+        if (!EfficientVariant.Needs(entry) || Ffmpeg.Locate() is not { } ffmpeg) return;
         lock (MakingVariant) { if (!MakingVariant.Add(entry.Id)) return; }
-        Log.Info($"making the 30 fps copy of {entry.Title}");
+        Log.Info($"making the efficient copy of {entry.Title}");
         var root = AppPaths.Root;
         Task.Run(async () =>
         {
-            try { await EfficientVariant.EnsureAsync(ffmpeg, root, entry.Id); Log.Info($"30 fps copy of {entry.Title} ready"); }
-            catch (Exception ex) { Log.Info($"30 fps copy of {entry.Title} failed: {ex.Message}"); }
+            try { await EfficientVariant.EnsureAsync(ffmpeg, root, entry.Id); Log.Info($"efficient copy of {entry.Title} ready"); }
+            catch (Exception ex) { Log.Info($"efficient copy of {entry.Title} failed: {ex.Message}"); }
             finally { lock (MakingVariant) MakingVariant.Remove(entry.Id); }
         });
     }

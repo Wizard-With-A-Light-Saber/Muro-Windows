@@ -290,7 +290,7 @@ internal static class PlaybackService
     /// first makes the 30 fps version, which can take a little while for a long 4K clip.
     public static async Task ApplyAsync(WallpaperEntry entry, int? monitorIndex, bool efficient, IProgress<double>? progress, CancellationToken ct)
     {
-        if (efficient && entry.Fps > EfficientVariant.MinimumFps && entry.EfficientFile is null && Ffmpeg.Locate() is { } ffmpeg)
+        if (efficient && EfficientVariant.Needs(entry) && Ffmpeg.Locate() is { } ffmpeg)
             await EfficientVariant.EnsureAsync(ffmpeg, Services.Root, entry.Id, progress, ct);
 
         var config = EngineConfig.Load(Services.Root);

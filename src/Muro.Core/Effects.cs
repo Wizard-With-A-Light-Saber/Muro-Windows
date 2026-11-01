@@ -6,10 +6,13 @@ public sealed class EffectsConfig
     public bool DayNight { get; set; }
     public bool Cursor { get; set; }
     public bool Audio { get; set; }
+    /// The audio visualiser style (see <see cref="VisualizerStyles"/>), or null for off.
+    public string? Visualizer { get; set; }
     public bool Shader { get; set; }
     public string? ShaderPath { get; set; }
 
-    public bool Any => DayNight || Cursor || Audio;
+    [System.Text.Json.Serialization.JsonIgnore]   // computed: it must not be written into config.json
+    public bool Any => DayNight || Cursor || Audio || Visualizer is not null;
 }
 
 /// The pure maths behind the effects, kept out of the engine so it can be tested.
@@ -62,6 +65,9 @@ public static class EffectCost
     public static readonly Cost DayNight = new("Day / night sync", "Tints the wallpaper a dim blue in the evening and clears it in the morning.", 0.1, 0.2, 8);
     public static readonly Cost Cursor = new("Mouse interaction", "The wallpaper shifts slightly as the pointer moves (a parallax effect).", 0.2, 0.2, 5);
     public static readonly Cost Audio = new("Audio reactivity", "The wallpaper flashes lightly with the sound your PC is playing.", 0.2, 1.2, 3);   // 2.4 at 20 updates a second, 1.2 at 12
+    // Measured the same way, with a sound playing: the four styles came out within 0.3% of each other (CPU +0.3 to 0.5%,
+    // GPU +1.4 to 1.7% on a 9.5% baseline, RAM +10 to 16 MB), so the worst of them is shown. Silence costs nothing.
+    public static readonly Cost Visualizer = new("Audio visualiser", "Draws spectrum bars, a waveform, particles or VU meters along the bottom of the screen, behind your desktop icons, while sound plays.", 0.5, 1.7, 16);
     public static readonly Cost Shader = new("Custom shader", "Runs your own GLSL shader over the video. Expect a LARGE GPU increase: even a trivial shader needs mpv's full shader pipeline, and a complex one costs more. It cannot stay inside a 4% GPU budget.", 0.2, 15.0, 60);
 
     public static string Describe(Cost c) =>

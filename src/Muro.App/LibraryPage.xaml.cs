@@ -108,11 +108,11 @@ public sealed partial class LibraryPage : Page
 
     private async Task ApplyAsync(LibraryItemVm vm, int? monitor, bool efficient)
     {
-        var needsVariant = efficient && vm.Entry.Fps > EfficientVariant.MinimumFps && vm.Entry.EfficientFile is null;
+        var needsVariant = efficient && EfficientVariant.Needs(vm.Entry);
         using var cts = new CancellationTokenSource();
         try
         {
-            if (needsVariant) BeginBusy("Making the 30 fps version of " + vm.Title, cts);
+            if (needsVariant) BeginBusy("Making the efficient version of " + vm.Title, cts);
             var progress = new Progress<double>(p => BusyProgress.Value = p * 100);
             await PlaybackService.ApplyAsync(vm.Entry, monitor, efficient, progress, cts.Token);
             MessageBar.IsOpen = false;
@@ -152,6 +152,98 @@ public sealed partial class LibraryPage : Page
             flyout.Items.Add(item);
         }
         flyout.ShowAt((FrameworkElement)sender);
+    }
+
+    // ---- Effects and colour look, per wallpaper
+
+    /// Day/night, mouse and audio for this wallpaper alone, and a colour look baked into its screen-sized copy.
+    private void OnEffectsMenu(object sender, RoutedEventArgs e)
+    {
+        if (VmOf(sender) is not { } vm) return;
+        var own = vm.Entry.Effects;
+        var flyout = new MenuFlyout();
+
+        var follow = new ToggleMenuFlyoutItem { Text = "Follow the Settings page", IsChecked = own is null };
+        follow.Click += (_, _) => SetEffects(vm, null);
+        flyout.Items.Add(follow);
+
+        void AddToggle(string text, bool on, Action<EffectsConfig, bool> set)
+        {
+            var item = new ToggleMenuFlyoutItem { Text = text, IsChecked = own is not null && on };
+            item.Click += (_, _) => SetEffects(vm, fx => set(fx, item.IsChecked));
+            flyout.Items.Add(item);
+        }
+        AddToggle("Day / night sync", own?.DayNight == true, (fx, on) => fx.DayNight = on);
+        AddToggle("Mouse interaction", own?.Cursor == true, (fx, on) => fx.Cursor = on);
+        AddToggle("Audio reactivity", own?.Audio == true, (fx, on) => fx.Audio = on);
+
+        var visualizer = new MenuFlyoutSubItem { Text = "Audio visualiser" };
+        void AddStyle(string? name, string label)
+        {
+            var item = new ToggleMenuFlyoutItem { Text = label, IsChecked = own is not null && own.Visualizer == name };
+            item.Click += (_, _) => SetEffects(vm, fx => fx.Visualizer = name);
+            visualizer.Items.Add(item);
+        }
+        AddStyle(null, "Off");
+        foreach (var (name, label) in VisualizerStyles.All) AddStyle(name, label);
+        flyout.Items.Add(visualizer);
+
+        flyout.Items.Add(new MenuFlyoutSeparator());
+        var look = new MenuFlyoutSubItem { Text = "Colour look (baked in, no extra GPU)" };
+        void AddLook(string? name, string label)
+        {
+            var item = new ToggleMenuFlyoutItem { Text = label, IsChecked = vm.Entry.ActiveLook == name };
+            item.Click += (_, _) => _ = SetLookAsync(vm, name);
+            look.Items.Add(item);
+        }
+        AddLook(null, "None");
+        foreach (var (name, label, _) in Looks.All) AddLook(name, label);
+        flyout.Items.Add(look);
+        flyout.Items.Add(new MenuFlyoutItem { Text = "A look plays the screen-sized copy, in every quality mode", IsEnabled = false });
+        flyout.ShowAt((FrameworkElement)sender);
+    }
+
+    /// <paramref name="change"/> null goes back to following Settings. The first change starts from what Settings has now,
+    /// so turning one effect on for a wallpaper does not silently turn the others off.
+    private void SetEffects(LibraryItemVm vm, Action<EffectsConfig>? change)
+    {
+        if (Services.Library.Damaged) return;
+        var global = EngineConfig.Load(Services.Root).Effects;
+        LibraryWriter.Update(Services.Root, m =>
+        {
+            if (m.Find(vm.Entry.Id) is not { } entry) return;
+            if (change is null) { entry.Effects = null; return; }
+            entry.Effects ??= new EffectsConfig { DayNight = global.DayNight, Cursor = global.Cursor, Audio = global.Audio, Visualizer = global.Visualizer };
+            change(entry.Effects);
+        });
+        Reload();
+    }
+
+    private async Task SetLookAsync(LibraryItemVm vm, string? look)
+    {
+        if (Services.Library.Damaged) return;
+        LibraryWriter.Update(Services.Root, m => { if (m.Find(vm.Entry.Id) is { } entry) entry.Look = look; });
+        Services.Library.Reload();
+        if (Services.Library.Manifest.Find(vm.Entry.Id) is not { } updated || !EfficientVariant.Needs(updated) || Ffmpeg.Locate() is not { } ffmpeg)
+        {
+            Reload();
+            return;
+        }
+        using var cts = new CancellationTokenSource();
+        try
+        {
+            BeginBusy("Applying the look to " + vm.Title, cts);
+            var progress = new Progress<double>(p => BusyProgress.Value = p * 100);
+            await EfficientVariant.EnsureAsync(ffmpeg, Services.Root, updated.Id, progress, cts.Token);
+            MessageBar.IsOpen = false;
+        }
+        catch (OperationCanceledException) { }
+        catch (Exception ex) when (ex is IOException or TranscodeException)
+        {
+            ShowMessage(InfoBarSeverity.Error, "The look could not be applied to " + vm.Title, ex.Message);
+        }
+        finally { EndBusy(); }
+        Reload();
     }
 
     private void OnStopClick(object sender, RoutedEventArgs e)

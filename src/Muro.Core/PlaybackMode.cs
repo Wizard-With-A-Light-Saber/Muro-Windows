@@ -2,8 +2,8 @@ using Muro.Core.Library;
 
 namespace Muro.Core;
 
-/// Which playback mode a wallpaper gets. "auto" (the default) decides per wallpaper: Efficient, a real 30 fps copy,
-/// for the heaviest ones, Smooth for the rest. "smooth" and "efficient" are the user's own explicit choice and win.
+/// Which playback mode a wallpaper gets. "auto" (the default) decides per wallpaper: Efficient, a lighter copy
+/// (30 fps, and shrunk to the screen when it is much bigger), for the heaviest ones, Smooth for the rest. "smooth" and "efficient" are the user's own explicit choice and win.
 public static class PlaybackMode
 {
     public const string Auto = "auto", Smooth = "smooth", Efficient = "efficient";
@@ -17,6 +17,6 @@ public static class PlaybackMode
     {
         Efficient => Efficient,
         Smooth => Smooth,
-        _ => entry is not null && IsHeavy(entry.Width, entry.Height, entry.Fps) ? Efficient : Smooth,
+        _ => entry is not null && (IsHeavy(entry.Width, entry.Height, entry.Fps) || Media.EfficientVariant.TargetSize(entry.Width, entry.Height) is not null) ? Efficient : Smooth,
     };
 }

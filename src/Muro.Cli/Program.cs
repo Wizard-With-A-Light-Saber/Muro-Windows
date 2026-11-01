@@ -194,14 +194,15 @@ async Task<int> SetCommand()
     var entry = Pick(target, LibraryManifest.Load(root).Wallpapers, w => w.Id, w => w.Title);
     if (entry is null) return 1;
 
+    Monitors.All();   // tells EfficientVariant how big the screen is, which Automatic needs
     // --smooth and --efficient are explicit; without either the default setting decides (Automatic by default).
     var mode = Flag("--efficient") ? PlaybackMode.Efficient : Flag("--smooth") ? PlaybackMode.Smooth : AppSettings.Load(root).ModeFor(entry);
-    if (mode == "efficient" && entry.Fps > EfficientVariant.MinimumFps && entry.EfficientFile is null)
+    if (mode == "efficient" && EfficientVariant.Needs(entry))
     {
         var ffmpeg = Ffmpeg.Locate();
         if (ffmpeg is not null)
         {
-            var progress = new Progress<double>(p => Console.Write("\rMaking the 30 fps version  " + (int)(p * 100) + "%   "));
+            var progress = new Progress<double>(p => Console.Write("\rMaking the efficient version  " + (int)(p * 100) + "%   "));
             await EfficientVariant.EnsureAsync(ffmpeg, root, entry.Id, progress, cts.Token);
             Console.WriteLine();
         }
