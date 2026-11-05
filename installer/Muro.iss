@@ -64,9 +64,13 @@ end;
 procedure CurUninstallStepChanged(CurUninstallStep: TUninstallStep);
 var
   Saver: String;
+  RestoreCode: Integer;
 begin
   if CurUninstallStep <> usUninstall then Exit;
   StopMuro;
+  // Muro keeps the Windows wallpaper as a still of its own wallpaper (so UAC prompts show it). Put the user's own
+  // wallpaper, or slideshow, back before the engine that knows how is removed.
+  Exec(ExpandConstant('{app}\Muro.Engine.exe'), '--restore-windows-wallpaper', '', SW_HIDE, ewWaitUntilTerminated, RestoreCode);
   // No longer start with Windows, whichever way it was switched on.
   RegDeleteValue(HKCU, 'Software\Microsoft\Windows\CurrentVersion\Run', 'Muro');
   // Windows must not be left pointing at a screen saver that is gone. What it used before Muro is kept in

@@ -185,7 +185,7 @@ built; say if you want it.
   offer it to Windows forever. Instead the newest non-draft, non-prerelease release that has a **Windows asset**
   wins: an `.exe` or `.msi`, or a `.zip` whose name contains `win` (the installer is preferred). A release without
   one is not an update. Publish Windows builds as GitHub releases with such an asset and a version above the
-  current one (`Directory.Build.props` says 0.1.2). Nothing is installed automatically: Download opens the asset in
+  current one (`Directory.Build.props` says 0.1.3). Nothing is installed automatically: Download opens the asset in
   the browser. Only the app checks; the tray does not.
 - **Quit Muro** in the tray stops the wallpaper (the engine exits and your own wallpaper returns). Applying a
   wallpaper, or Open Muro then Apply, starts it again.
@@ -299,7 +299,7 @@ built; say if you want it.
 **What exists**
 - `scripts/publish.ps1` builds `dist/`: the install folder `dist/Muro/`, **`Muro-<version>-win-x64.zip`** (unzip anywhere
   and run `Muro.exe`), **`Muro-Setup-<version>.exe`** (per-user installer, no admin rights) and `SHA256SUMS.txt`.
-  The version comes from `Directory.Build.props` (0.1.2). The two names are what the app's update check needs:
+  The version comes from `Directory.Build.props` (0.1.3). The two names are what the app's update check needs:
   an `.exe`, or a `.zip` containing `win`.
 - One flat folder with one shared .NET and Windows App SDK runtime (about 350 MB installed, 99 MB installer):
   `Muro.exe` (app), `Muro.Engine.exe`, `Muro.scr`, `libmpv-2.dll`, `ffmpeg\ffmpeg.exe`, `licenses\`. Nothing

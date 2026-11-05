@@ -77,6 +77,11 @@ public static class DesktopHost
         Native.SystemParametersInfo(Native.SPI_SETDESKWALLPAPER, 0, path, Native.SPIF_SENDCHANGE);
     }
 
+    /// Sets the Windows wallpaper to a picture and keeps it in the user's settings (it survives a restart). Windows
+    /// draws UAC prompts and some other system screens with this picture, never with Muro's video.
+    public static bool SetWindowsWallpaper(string picturePath) =>
+        Native.SystemParametersInfo(Native.SPI_SETDESKWALLPAPER, 0, picturePath, Native.SPIF_SENDCHANGE | 0x01 /* SPIF_UPDATEINIFILE */);
+
     /// Primary monitor rectangle in physical pixels (the process is PerMonitorV2 aware).
     public static (int X, int Y, int W, int H) PrimaryMonitor() =>
         (0, 0, Native.GetSystemMetrics(0), Native.GetSystemMetrics(1));

@@ -68,7 +68,7 @@ internal sealed class EffectsRunner : IDisposable
     private string _key = "";
     private double _pulse;
     private long _audioRetryAt;
-    private bool _layerErrorLogged, _vizLogged;
+    private bool _layerErrorLogged, _vizLogged, _audioErrorLogged;
 
     private WasapiLoopbackCapture? _capture;
     private MMDeviceEnumerator? _enumerator;
@@ -244,8 +244,11 @@ internal sealed class EffectsRunner : IDisposable
         }
         catch (Exception ex)
         {
-            Log.Info("audio effect unavailable: " + ex.Message);
-            _audioRetryAt = Environment.TickCount64 + 60_000;
+            if (!_audioErrorLogged) Log.Info("audio effect unavailable: " + ex.Message);
+            _audioErrorLogged = true;
+            // Right after a player closes the device can be busy for a moment. Try again soon, not in a minute:
+            // a minute of no sound reads as a frozen visualiser.
+            _audioRetryAt = Environment.TickCount64 + 3_000;
         }
     }
 
@@ -287,7 +290,9 @@ internal sealed class EffectsRunner : IDisposable
     private void BuildFrame(long now)
     {
         var f = _frame;
-        f.Silent = now - Interlocked.Read(ref _audioAt) > 300;
+        // Silent when no buffer has arrived for a moment, or the buffers are all zeros: a player that is paused, or
+        // closing, can keep a stream open and send silence for a long time, which used to leave flat bars on screen.
+        f.Silent = now - Interlocked.Read(ref _audioAt) > 300 || Math.Max(_vuLeft, _vuRight) < 0.01f;
         if (f.Silent)
         {
             Array.Clear(f.Bands); Array.Clear(f.Wave);

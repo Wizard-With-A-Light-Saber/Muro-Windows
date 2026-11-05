@@ -50,6 +50,7 @@ internal sealed class WallpaperManager : IDisposable
     private DesktopHost.Target? _target;
     private HashSet<string>? _covered;
     private nuint _reconcileTimer, _evaluateTimer, _confirmTimer, _retryTimer, _heartbeat;
+    private bool _fastHeartbeat;
     private int? _lastGlobalPauseAfter;
     private string _lastFullscreen = "";
 
@@ -304,6 +305,16 @@ internal sealed class WallpaperManager : IDisposable
             slot.Player.Paused = reason != PauseReason.None;
             Log.Info(slot.Monitor.DeviceName + ": " + (reason == PauseReason.None ? "playing" : "paused (" + reason + ")"));
             slot.Applied = reason;
+        }
+        // Closing a full-screen or covering window sends no event we hear, so the only thing that ends the hold is the
+        // next look. Every 3 s left a frozen or blank desktop on screen after closing a media player; while a screen is
+        // held for such a window, look every half second instead.
+        var fast = _slots.Values.Any(s => (s.Holds & (PauseReason.Fullscreen | PauseReason.DesktopCovered)) != 0);
+        if (fast != _fastHeartbeat)
+        {
+            _fastHeartbeat = fast;
+            _events.StopTimer(_heartbeat);
+            _heartbeat = _events.StartTimer(fast ? 500 : 3000, () => Evaluate(), repeat: true);
         }
         _fx.Sync();   // effects follow the pause state and the config; this is also what runs after every config change
     }

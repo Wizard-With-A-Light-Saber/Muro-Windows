@@ -28,6 +28,8 @@ var seconds = int.TryParse(Opt("--seconds"), out var s) ? s : 0;
 var pauseAfter = int.TryParse(Opt("--test-pause-after"), out var pa) ? pa : 0;
 
 AppPaths.Ensure();
+// Run by the uninstaller: put the user's own Windows wallpaper back, then stop.
+if (args.Contains("--restore-windows-wallpaper")) { WindowsWallpaperService.RestoreOriginal(AppPaths.Root); return 0; }
 // One engine per library. The app starts the engine on demand and must never start a second.
 using var singleInstance = new Mutex(true, "Muro.Engine." + Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(AppPaths.Root.ToLowerInvariant())))[..16], out var firstEngine);
 if (!firstEngine) { Console.Error.WriteLine("Muro engine is already running."); return 0; }
@@ -57,6 +59,7 @@ ScheduleRunner? runner = null;
 var surfaceRunners = new List<ScheduleRunner>();   // the screen saver and lock screen schedules
 LockScreenService? lockScreen = null;
 AccentService? accent = null;
+WindowsWallpaperService? windowsWallpaper = null;
 EngineTray? tray = null;
 void Cleanup()
 {
@@ -66,6 +69,7 @@ void Cleanup()
     foreach (var other in surfaceRunners) other.Dispose();
     manager.Dispose();
     events.Dispose();
+    windowsWallpaper?.RestoreOnExit();   // before the refresh, so the shell repaints the user's own wallpaper
     DesktopHost.RefreshWallpaper();
 }
 
@@ -82,7 +86,7 @@ if (fromDisk)
     var watcher = new FileSystemWatcher(AppPaths.Root, "config.json") { EnableRaisingEvents = true };
     // The config is saved by writing a temp file and renaming it over config.json, which raises
     // Created or Renamed rather than Changed, so listen to all three.
-    void Reload() => events.Post(() => { Log.Info("config changed"); config = EngineConfig.Load(AppPaths.Root); tray?.Show(config.ShowTrayIcon); lockScreen?.Sync(config); accent?.Sync(config); manager.Reconcile(); });
+    void Reload() => events.Post(() => { Log.Info("config changed"); config = EngineConfig.Load(AppPaths.Root); tray?.Show(config.ShowTrayIcon); lockScreen?.Sync(config); accent?.Sync(config); windowsWallpaper?.Sync(config); manager.Reconcile(); });
     watcher.Changed += (_, _) => Reload();
     watcher.Created += (_, _) => Reload();
     watcher.Renamed += (_, _) => Reload();
@@ -114,6 +118,8 @@ try
         lockScreen.Sync(config);
         accent = new AccentService(AppPaths.Root, events);
         accent.Sync(config);
+        windowsWallpaper = new WindowsWallpaperService(AppPaths.Root, events);
+        windowsWallpaper.Sync(config);
         // Only the real engine has a tray icon, not a harness run started with a video on the command line.
         tray = new EngineTray(AppPaths.Root, () => runner?.RunningName, manager.Replay, MessageLoop.Quit);
         tray.Show(config.ShowTrayIcon);
