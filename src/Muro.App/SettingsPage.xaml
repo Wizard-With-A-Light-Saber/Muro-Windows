@@ -41,6 +41,15 @@
                     <Grid ColumnSpacing="16">
                         <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
                         <StackPanel>
+                            <TextBlock Text="Language" />
+                            <TextBlock Style="{StaticResource Hint}" Text="Choose the language Muro uses, or follow Windows" />
+                        </StackPanel>
+                        <ComboBox x:Name="LanguageBox" Grid.Column="1" Width="190" SelectionChanged="OnLanguageChanged" />
+                    </Grid>
+                    <Rectangle Style="{StaticResource RowDivider}" />
+                    <Grid ColumnSpacing="16">
+                        <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
+                        <StackPanel>
                             <TextBlock Text="Links from other apps" />
                             <TextBlock Style="{StaticResource Hint}" Text="Let a script, a shortcut or a web page switch wallpaper, pause or resume with a muro:// link. A link can only use wallpapers already in your library and never starts a download." />
                         </StackPanel>

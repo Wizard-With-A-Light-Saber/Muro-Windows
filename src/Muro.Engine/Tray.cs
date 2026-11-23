@@ -37,21 +37,22 @@ internal sealed class EngineTray : IDisposable
 
     private IReadOnlyList<TrayIcon.Item> BuildMenu(Action quit)
     {
+        Loc.Use(AppSettings.Load(_root).Language);   // the language can change while the engine runs
         var config = EngineConfig.Load(_root);
         var playing = config.AllDisplays is not null || config.PerDisplay.Count > 0;
         var paused = config.Paused == true;
-        var items = new List<TrayIcon.Item> { new("Open Muro", AppLauncher.Open), TrayIcon.Item.Separator };
+        var items = new List<TrayIcon.Item> { new(Loc.T("Open Muro"), AppLauncher.Open), TrayIcon.Item.Separator };
         if (playing)
         {
-            items.Add(new(paused ? "Resume wallpaper" : "Pause wallpaper", () => EngineConfig.Update(_root, c => c.Paused = paused ? null : true)));
+            items.Add(new(paused ? Loc.T("Resume wallpaper") : Loc.T("Pause wallpaper"), () => EngineConfig.Update(_root, c => c.Paused = paused ? null : true)));
             // Wakes a wallpaper that Pause After froze and starts its clock again.
-            if (!paused) items.Add(new("Play again", _replay));
+            if (!paused) items.Add(new(Loc.T("Play again"), _replay));
         }
         if (_runningSchedule() is { } name)
             items.Add(new($"Stop \"{name}\"", () => ScheduleControl.Stop(_root, Surface.Desktop, restore: true)));
         if (playing || _runningSchedule() is not null) items.Add(TrayIcon.Item.Separator);
         AddRecents(items, config);
-        items.Add(new("Quit Muro", quit));
+        items.Add(new(Loc.T("Quit Muro"), quit));
         return items;
     }
 
@@ -66,11 +67,11 @@ internal sealed class EngineTray : IDisposable
         TrayIcon.Item Menu(string title, string? monitorId, string? current) => new(title, Children:
             recents.Select(e => new TrayIcon.Item(e.Title, () => LinkHandler.SetWallpaper(_root, e, monitorId, "desktop"), Checked: e.Id == current)).ToList());
 
-        items.Add(Menu("Recent wallpapers", null, config.AllDisplays?.WallpaperID));
+        items.Add(Menu(Loc.T("Recent wallpapers"), null, config.AllDisplays?.WallpaperID));
         var monitors = Monitors.All();
         if (monitors.Count > 1)
             for (var n = 0; n < monitors.Count; n++)
-                items.Add(Menu("Display " + (n + 1) + (monitors[n].Primary ? " (main)" : ""), monitors[n].Id, config.AssignmentFor(monitors[n].Id)?.WallpaperID));
+                items.Add(Menu(Loc.T("Display") + " " + (n + 1) + (monitors[n].Primary ? " " + Loc.T("(main)") : ""), monitors[n].Id, config.AssignmentFor(monitors[n].Id)?.WallpaperID));
         items.Add(TrayIcon.Item.Separator);
     }
 

@@ -2,4 +2,8 @@
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
   </PropertyGroup>
+  <ItemGroup>
+    <!-- One file per language, {"English text": "translation"}; see Loc. -->
+    <EmbeddedResource Include="Strings\*.json" />
+  </ItemGroup>
 </Project>

@@ -50,13 +50,17 @@ public sealed partial class SettingsPage : Page
         AccentSwitch.IsOn = config.MatchAccent;
         SoundSwitch.IsOn = config.LiveSound;
         LinksSwitch.IsOn = !config.LinksOff;
-        ThemeBox.ItemsSource = new[] { "System", "Light", "Dark" };
+        ThemeBox.ItemsSource = new[] { Loc.T("System"), Loc.T("Light"), Loc.T("Dark") };
+        // "System" follows Windows; the languages are always written in their own language.
+        LanguageBox.ItemsSource = new[] { Loc.T("System") }.Concat(Loc.Languages.Select(l => l.Name)).ToList();
+        var chosen = AppSettings.Load(Services.Root).Language;
+        LanguageBox.SelectedIndex = chosen is null ? 0 : Math.Max(0, Array.FindIndex(Loc.Languages, l => l.Code == chosen) + 1);
         ThemeBox.SelectedIndex = Array.IndexOf(ThemeNames, AppSettings.Load(Services.Root).Theme) is var t and >= 0 ? t : 0;
 
         SpeedBox.ItemsSource = Speeds.Select(s => s.Label).ToList();
         var speed = config.PlaybackSpeed ?? 1.0;
         SpeedBox.SelectedIndex = Array.FindIndex(Speeds, s => Math.Abs(s.Speed - speed) < 0.01) is var i and >= 0 ? i : 2;
-        QualityBox.ItemsSource = new[] { "Automatic", "Smooth", "Efficient" };
+        QualityBox.ItemsSource = new[] { Loc.T("Automatic"), Loc.T("Smooth"), Loc.T("Efficient") };
         QualityBox.SelectedIndex = Array.IndexOf(QualityModes, AppSettings.Load(Services.Root).DefaultMode ?? PlaybackMode.Auto) is var q and >= 0 ? q : 0;
 
         var fx = config.Effects;
@@ -64,7 +68,7 @@ public sealed partial class SettingsPage : Page
         CursorSwitch.IsOn = fx.Cursor;
         AudioSwitch.IsOn = fx.Audio;
         ShaderSwitch.IsOn = fx.Shader;
-        VisualizerBox.ItemsSource = VisualizerStyles.All.Select(s => s.Label).ToList();
+        VisualizerBox.ItemsSource = VisualizerStyles.All.Select(s => Loc.T(s.Label)).ToList();
         VisualizerBox.SelectedIndex = Math.Max(0, VisualizerStyles.All.ToList().FindIndex(s => s.Name == VisualizerStyles.Normalize(fx.Visualizer ?? "spectrum")));
         VisualizerSwitch.IsOn = fx.Visualizer is not null;
         VisualizerNote.Text = Note(EffectCost.Visualizer);
@@ -178,6 +182,15 @@ public sealed partial class SettingsPage : Page
         if (_loading) return;
         var on = SoundSwitch.IsOn;
         Change(() => EngineConfig.Update(Services.Root, c => c.LiveSound = on));
+    }
+
+    private void OnLanguageChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (_loading || LanguageBox.SelectedIndex < 0) return;
+        var code = LanguageBox.SelectedIndex == 0 ? null : Loc.Languages[LanguageBox.SelectedIndex - 1].Code;
+        Change(() => AppSettings.Update(Services.Root, s => s.Language = code));
+        MainWindow.Instance?.ApplyLanguage();
+        Load();   // the combo boxes and notes this page fills in by code, in the new language
     }
 
     private void OnThemeChanged(object sender, SelectionChangedEventArgs e)
@@ -317,7 +330,7 @@ public sealed partial class SettingsPage : Page
     private List<Choice> BuildChoices(bool withDesktop)
     {
         var list = new List<Choice>();
-        if (withDesktop) list.Add(new("Same as the desktop", "desktop", null));
+        if (withDesktop) list.Add(new(Loc.T("Same as the desktop"), "desktop", null));
         list.AddRange(Services.Library.Manifest.Wallpapers.OrderBy(w => w.Title).Select(w => new Choice("Wallpaper: " + w.Title, "wallpaper", w.Id)));
         list.AddRange(PlaylistStore.Load(Services.Root).Select(p => new Choice("Playlist: " + p.Name, "playlist", p.Id)));
         list.AddRange(AutomationStore.Load(Services.Root).Select(a => new Choice("Automation: " + a.Name, "automation", a.Id)));

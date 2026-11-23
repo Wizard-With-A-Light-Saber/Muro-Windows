@@ -81,7 +81,7 @@ public sealed partial class LibraryPage : Page
     {
         if (VmOf(sender) is not { } vm) return;
         var flyout = new MenuFlyout();
-        AddApplyItems(flyout.Items, vm, null, "All displays");
+        AddApplyItems(flyout.Items, vm, null, Loc.T("All displays"));
         var monitors = Monitors.All();
         if (monitors.Count > 1)
         {
@@ -98,9 +98,9 @@ public sealed partial class LibraryPage : Page
 
     private void AddApplyItems(IList<MenuFlyoutItemBase> items, LibraryItemVm vm, int? monitor, string? label)
     {
-        var smooth = new MenuFlyoutItem { Text = label is null ? "Smooth (original frame rate)" : label + " - Smooth" };
+        var smooth = new MenuFlyoutItem { Text = label is null ? Loc.T("Smooth (original frame rate)") : label + " - Smooth" };
         smooth.Click += (_, _) => _ = ApplyAsync(vm, monitor, efficient: false);
-        var efficient = new MenuFlyoutItem { Text = label is null ? "Efficient (30 fps)" : label + " - Efficient (30 fps)" };
+        var efficient = new MenuFlyoutItem { Text = label is null ? Loc.T("Efficient (30 fps)") : label + " - Efficient (30 fps)" };
         efficient.Click += (_, _) => _ = ApplyAsync(vm, monitor, efficient: true);
         items.Add(smooth);
         items.Add(efficient);
@@ -130,8 +130,8 @@ public sealed partial class LibraryPage : Page
 
     private static readonly (string Label, int? Seconds)[] PauseChoices =
     [
-        ("Follow the Schedules setting", null), ("Never pause this wallpaper", 0), ("After 10 seconds", 10), ("After 30 seconds", 30),
-        ("After 1 minute", 60), ("After 5 minutes", 300), ("After 15 minutes", 900), ("After 1 hour", 3600),
+        (Loc.T("Follow the Schedules setting"), null), (Loc.T("Never pause this wallpaper"), 0), (Loc.T("After 10 seconds"), 10), (Loc.T("After 30 seconds"), 30),
+        (Loc.T("After 1 minute"), 60), (Loc.T("After 5 minutes"), 300), (Loc.T("After 15 minutes"), 900), (Loc.T("After 1 hour"), 3600),
     ];
 
     /// A value of its own wins over the global setting, and zero means never, which is a decision and not
@@ -163,7 +163,7 @@ public sealed partial class LibraryPage : Page
         var own = vm.Entry.Effects;
         var flyout = new MenuFlyout();
 
-        var follow = new ToggleMenuFlyoutItem { Text = "Follow the Settings page", IsChecked = own is null };
+        var follow = new ToggleMenuFlyoutItem { Text = Loc.T("Follow the Settings page"), IsChecked = own is null };
         follow.Click += (_, _) => SetEffects(vm, null);
         flyout.Items.Add(follow);
 
@@ -173,11 +173,11 @@ public sealed partial class LibraryPage : Page
             item.Click += (_, _) => SetEffects(vm, fx => set(fx, item.IsChecked));
             flyout.Items.Add(item);
         }
-        AddToggle("Day / night sync", own?.DayNight == true, (fx, on) => fx.DayNight = on);
-        AddToggle("Mouse interaction", own?.Cursor == true, (fx, on) => fx.Cursor = on);
-        AddToggle("Audio reactivity", own?.Audio == true, (fx, on) => fx.Audio = on);
+        AddToggle(Loc.T("Day / night sync"), own?.DayNight == true, (fx, on) => fx.DayNight = on);
+        AddToggle(Loc.T("Mouse interaction"), own?.Cursor == true, (fx, on) => fx.Cursor = on);
+        AddToggle(Loc.T("Audio reactivity"), own?.Audio == true, (fx, on) => fx.Audio = on);
 
-        var visualizer = new MenuFlyoutSubItem { Text = "Audio visualiser" };
+        var visualizer = new MenuFlyoutSubItem { Text = Loc.T("Audio visualiser") };
         void AddStyle(string? name, string label)
         {
             var item = new ToggleMenuFlyoutItem { Text = label, IsChecked = own is not null && own.Visualizer == name };
@@ -196,7 +196,7 @@ public sealed partial class LibraryPage : Page
             item.Click += (_, _) => _ = SetLookAsync(vm, name);
             look.Items.Add(item);
         }
-        AddLook(null, "None");
+        AddLook(null, Loc.T("None"));
         foreach (var (name, label, _) in Looks.All) AddLook(name, label);
         flyout.Items.Add(look);
         flyout.Items.Add(new MenuFlyoutItem { Text = "A look plays the screen-sized copy, in every quality mode", IsEnabled = false });

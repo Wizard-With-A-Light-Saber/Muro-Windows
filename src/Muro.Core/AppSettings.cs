@@ -44,6 +44,9 @@ public sealed class AppSettings
         if (!next.SequenceEqual(current)) Update(root, s => s.Recents = next);
     }
 
+    /// A language code from <see cref="Loc.Languages"/>; null follows the Windows display language.
+    public string? Language { get; set; }
+
     /// "light" or "dark" for the app's look; null follows Windows (System), as in the macOS app since 6.2.
     public string? Theme { get; set; }
     /// The release the user has already been told about, so the callout is not shown twice.

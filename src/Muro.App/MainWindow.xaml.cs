@@ -31,12 +31,24 @@ public sealed partial class MainWindow : Window
         };
         Services.Updates.Changed += ShowUpdateBar;
         ApplyTheme();
+        Loc.Use(AppSettings.Load(Services.Root).Language);
+        ContentFrame.Navigated += (_, e) => { if (e.Content is Page page) Localizer.Attach(page, DispatcherQueue); };
+        Nav.Loaded += (_, _) => ApplyLanguage();
         Nav.SelectedItem = Nav.MenuItems[0];
         _ = Services.Catalog.RefreshAsync(force: true);
         _ = Services.Updates.CheckIfDueAsync();
     }
 
     internal nint Handle => WinRT.Interop.WindowNative.GetWindowHandle(this);
+
+    /// Puts the window and the page on show into the chosen language (a code, or null for the Windows language). Pages
+    /// opened later translate themselves as they load.
+    internal void ApplyLanguage()
+    {
+        Loc.Use(AppSettings.Load(Services.Root).Language);
+        Localizer.Apply(Content);
+        if (Nav.SettingsItem is NavigationViewItem settings) settings.Content = Loc.T("Settings");
+    }
 
     /// Light, Dark, or System (follows Windows and switches the moment Windows does). Applied to the whole window.
     internal void ApplyTheme()

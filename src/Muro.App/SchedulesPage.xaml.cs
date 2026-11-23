@@ -10,8 +10,8 @@ public sealed partial class SchedulesPage : Page
 {
     private static readonly (string Label, int Seconds)[] PauseChoices =
     [
-        ("Off (keep playing)", 0), ("After 10 seconds", 10), ("After 30 seconds", 30), ("After 1 minute", 60),
-        ("After 2 minutes", 120), ("After 5 minutes", 300), ("After 15 minutes", 900), ("After 1 hour", 3600),
+        (Loc.T("Off (keep playing)"), 0), (Loc.T("After 10 seconds"), 10), (Loc.T("After 30 seconds"), 30), (Loc.T("After 1 minute"), 60),
+        (Loc.T("After 2 minutes"), 120), (Loc.T("After 5 minutes"), 300), (Loc.T("After 15 minutes"), 900), (Loc.T("After 1 hour"), 3600),
     ];
 
     private readonly DispatcherTimer _poll = new() { Interval = TimeSpan.FromSeconds(2) };
@@ -122,8 +122,8 @@ public sealed partial class SchedulesPage : Page
             return button;
         }
         var buttons = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8, VerticalAlignment = VerticalAlignment.Center };
-        buttons.Children.Add(running ? Make("Stop", () => { ScheduleControl.Stop(Services.Root, Surface.Desktop); Rebuild(); }) : Make("Play", play, accent: true));
-        buttons.Children.Add(Make("Edit", edit));
+        buttons.Children.Add(running ? Make(Loc.T("Stop"), () => { ScheduleControl.Stop(Services.Root, Surface.Desktop); Rebuild(); }) : Make(Loc.T("Play"), play, accent: true));
+        buttons.Children.Add(Make(Loc.T("Edit"), edit));
         buttons.Children.Add(Make("Delete", delete));
 
         var grid = new Grid { ColumnSpacing = 12 };
