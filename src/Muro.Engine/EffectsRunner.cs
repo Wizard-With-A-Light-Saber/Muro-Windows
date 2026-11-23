@@ -73,6 +73,7 @@ internal sealed class EffectsRunner : IDisposable
     private WasapiLoopbackCapture? _capture;
     private MMDeviceEnumerator? _enumerator;
     private DeviceWatcher? _watcher;
+    private AudioEndpointVolume? _outVolume;
     private volatile float _level, _peak = 0.02f;
     private long _audioAt;
 
@@ -144,7 +145,7 @@ internal sealed class EffectsRunner : IDisposable
         var dim = (byte)Math.Round(EffectMath.Night(DateTime.Now.TimeOfDay) * NightAlpha);
         if (targets.Any(t => t.Fx.Audio))
         {
-            var heard = now - Interlocked.Read(ref _audioAt) < 300 ? _level : 0f;
+            var heard = now - Interlocked.Read(ref _audioAt) < 300 && !OutputSilenced() ? _level : 0f;
             _pulse = Math.Max(heard, _pulse * 0.75);   // quick to rise, slower to fall
         }
         else _pulse = 0;
@@ -239,6 +240,8 @@ internal sealed class EffectsRunner : IDisposable
             capture.StartRecording();
             _capture = capture;
             _enumerator = new MMDeviceEnumerator();
+            try { _outVolume = _enumerator.GetDefaultAudioEndpoint(DataFlow.Render, Role.Multimedia).AudioEndpointVolume; }
+            catch { _outVolume = null; }   // no volume to read: behave as before and trust the capture
             _watcher = new DeviceWatcher(RestartAudioSoon);
             _enumerator.RegisterEndpointNotificationCallback(_watcher);
         }
@@ -250,6 +253,14 @@ internal sealed class EffectsRunner : IDisposable
             // a minute of no sound reads as a frozen visualiser.
             _audioRetryAt = Environment.TickCount64 + 3_000;
         }
+    }
+
+    /// Loopback capture reads the mix before the device's master volume and mute, so a muted or turned-down PC still
+    /// delivers full-level audio. The visualiser and flash must follow what can be heard, not what is mixed.
+    private bool OutputSilenced()
+    {
+        try { return _outVolume is { } v && (v.Mute || v.MasterVolumeLevelScalar < 0.01f); }
+        catch { return false; }
     }
 
     /// Called from audio threads. Waits half a second, since Windows reports a device change a moment before the
@@ -292,7 +303,7 @@ internal sealed class EffectsRunner : IDisposable
         var f = _frame;
         // Silent when no buffer has arrived for a moment, or the buffers are all zeros: a player that is paused, or
         // closing, can keep a stream open and send silence for a long time, which used to leave flat bars on screen.
-        f.Silent = now - Interlocked.Read(ref _audioAt) > 300 || Math.Max(_vuLeft, _vuRight) < 0.01f;
+        f.Silent = now - Interlocked.Read(ref _audioAt) > 300 || Math.Max(_vuLeft, _vuRight) < 0.01f || OutputSilenced();
         if (f.Silent)
         {
             Array.Clear(f.Bands); Array.Clear(f.Wave);
@@ -328,6 +339,8 @@ internal sealed class EffectsRunner : IDisposable
             _enumerator.Dispose();
         }
         _enumerator = null; _watcher = null;
+        try { _outVolume?.Dispose(); } catch { }
+        _outVolume = null;
         if (capture is null) return;
         capture.DataAvailable -= OnAudio;
         try { capture.Dispose(); } catch (Exception ex) { Log.Info("audio effect stop: " + ex.Message); }
