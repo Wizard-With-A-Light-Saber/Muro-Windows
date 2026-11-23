@@ -416,3 +416,45 @@ It needs nothing installed (no .NET, no installer), makes no registry entries an
 - Unsigned, like the installer: SmartScreen will warn once.
 - Not tested: a PC without .NET or without internet (nothing needs either), running it from a read-only folder or a network
   drive (it only reads itself; the unpack goes to `%LOCALAPPDATA%`), and a full disk (the launcher shows an error message).
+
+## Catching up with the macOS app 6.0 to 6.2
+
+What the macOS app gained since the 5.x this port started from, and where each piece is here.
+
+- **Playlists on the clock** (6.2). Every 30 minutes is :00 and :30, every hour is on the hour, any other length is
+  counted from local midnight (and restarts at 00:00). `Scheduler.PlaylistDeadline`. A playlist that slept through
+  boundaries still advances once.
+- **Light, Dark or System** (6.2). Settings, Theme. Stored as `theme` in `app-settings.json`; System follows Windows live.
+- **Live wallpaper sound** (6.1). Settings, `liveSound` in `config.json`. A video imported while it is on keeps its audio
+  (aac in the master, `hasSound` on its library entry) and always plays its master, since the 30 fps and look copies are
+  silent. The wallpaper set last is the one heard. Downloaded wallpapers stay silent. Videos imported before it was
+  turned on are not changed.
+- **`muro://` links** (6.1). `muro://set?id=<id>[&display=<monitor id>][&surface=desktop|lockscreen|screensaver|all]`,
+  `muro://pause`, `muro://resume`. The engine registers the protocol per user and carries a link out by writing `config.json`,
+  so it works with Muro open or closed. Safe by rule: only wallpapers already in the library, never a download, a display
+  that is not connected is ignored, and an ignored link is logged with the reason (`logs/engine.log`). Settings can turn
+  links off (`linksOff`). Tested live with `pause`, `resume`, an unknown id and a `download` link.
+- **Tray menu** (6.1). The ten most recent wallpapers (`recents` in `app-settings.json`, kept by the engine) and, with more
+  than one display, a submenu per display. The per-display sound button is not built: Windows plays one wallpaper sound.
+- **Interactive wallpapers** (6.1, hosted since 6.2). Pages that draw themselves, from `interactive.json` beside
+  `catalog.json` (Eclipse, White Sand, Grey Silk, Levi Ackerman). Explore and `muro catalog` list them under Interactive
+  Wallpapers and they download only on request, every file checked against its size and SHA-256 before the folder is
+  swapped in (`Hosted Interactive/<id>/`). The engine draws the page with **WebView2** in a child window over the still,
+  below the desktop icons, on its own STA thread, and sends it `muro:mouse {x,y,inside}`, `muro:click {x,y}` and
+  `muro:audio {bands (64), bass, mid, treble, level}` (the audio is the same loopback capture as the visualiser, and a
+  muted output counts as silence). The pointer is sampled, since the wallpaper gets no mouse messages: a page reacts only
+  while the pointer is over the bare desktop. The page is locked in: its own folder under one virtual host name, no
+  network, no new windows, no permissions. It is hidden while the screen is frozen, and without the WebView2 runtime the
+  still plays alone. The still is also what the lock screen, the screen saver and the Windows wallpaper use. Your own HTML
+  page, or a folder with one, can be imported (file picker or dropped on Library; 500 files, 100 MB a file, 300 MB total,
+  hidden files and links skipped) and gets a plain still with its name. Checked: `Muro.Engine --interactive-selftest
+  <index.html>` loads Eclipse, feeds it mouse, click and audio events and reads back no page errors. **Not checked by eye**:
+  the PC was locked, so the page was never seen on the desktop.
+- **Eleven languages** (6.1). English, Simplified and Traditional Chinese, Japanese, Korean, Spanish, French, German, Italian,
+  Brazilian Portuguese and Russian; Settings, Language (or follow Windows). The English sentence is the key and each
+  language is one embedded `Strings/<code>.json` of 150 strings: every on-screen string in the XAML, the tray menu and the
+  combo boxes and menus the code builds. Anything else (rare error messages, dialogs, the What's new text) stays English.
+  `Localizer` swaps each page's text as it loads and remembers the English, so changing language re-translates live;
+  Schedules' Pause After list is read once per run and needs a restart. **The translations were written by an AI, not by
+  native speakers, and want a review before a public release.**
+- **Not ported:** the welcome film, the Apple section, `.saver` screen savers and macOS 26 Liquid Glass (macOS only).
