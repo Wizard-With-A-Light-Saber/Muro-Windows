@@ -41,6 +41,15 @@
                     <Grid ColumnSpacing="16">
                         <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
                         <StackPanel>
+                            <TextBlock Text="Live wallpaper sound" />
+                            <TextBlock Style="{StaticResource Hint}" Text="Videos you import from now on keep their sound. The wallpaper you set last is the one you hear. Downloaded wallpapers stay silent." />
+                        </StackPanel>
+                        <ToggleSwitch x:Name="SoundSwitch" Grid.Column="1" Toggled="OnSoundToggled" />
+                    </Grid>
+                    <Rectangle Style="{StaticResource RowDivider}" />
+                    <Grid ColumnSpacing="16">
+                        <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
+                        <StackPanel>
                             <TextBlock Text="Start with Windows" />
                             <TextBlock x:Name="StartNote" Style="{StaticResource Hint}" Text="Starts Muro quietly in the background when you sign in" />
                         </StackPanel>

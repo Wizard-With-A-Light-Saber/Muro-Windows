@@ -48,6 +48,7 @@ public sealed partial class SettingsPage : Page
             : "Starts Muro quietly in the background when you sign in";
         TraySwitch.IsOn = config.ShowTrayIcon;
         AccentSwitch.IsOn = config.MatchAccent;
+        SoundSwitch.IsOn = config.LiveSound;
         ThemeBox.ItemsSource = new[] { "System", "Light", "Dark" };
         ThemeBox.SelectedIndex = Array.IndexOf(ThemeNames, AppSettings.Load(Services.Root).Theme) is var t and >= 0 ? t : 0;
 
@@ -162,6 +163,13 @@ public sealed partial class SettingsPage : Page
         if (_loading || SpeedBox.SelectedIndex < 0) return;
         var speed = Speeds[SpeedBox.SelectedIndex].Speed;
         Change(() => EngineConfig.Update(Services.Root, c => c.PlaybackSpeed = Math.Abs(speed - 1.0) < 0.01 ? null : speed));
+    }
+
+    private void OnSoundToggled(object sender, RoutedEventArgs e)
+    {
+        if (_loading) return;
+        var on = SoundSwitch.IsOn;
+        Change(() => EngineConfig.Update(Services.Root, c => c.LiveSound = on));
     }
 
     private void OnThemeChanged(object sender, SelectionChangedEventArgs e)

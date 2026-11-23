@@ -101,6 +101,17 @@ public sealed class MpvPlayer : IDisposable
         Check(MpvNative.mpv_set_property_string(_ctx, "vf", fps > 0 ? $"fps=fps={fps}" : ""), "vf");
 
     /// Sets any mpv property (brightness, saturation, video-pan-x, ...). Used by the effects.
+    private bool _sound;
+
+    /// Plays or silences the video's own audio track. A wallpaper starts silent (aid=no); only Live Wallpaper Sound
+    /// turns it on, for one screen at a time.
+    public void SetSound(bool on)
+    {
+        if (on == _sound) return;
+        _sound = on;
+        SetProperty("aid", on ? "auto" : "no");
+    }
+
     public void SetProperty(string name, string value) =>
         Check(MpvNative.mpv_set_property_string(_ctx, name, value), name);
 

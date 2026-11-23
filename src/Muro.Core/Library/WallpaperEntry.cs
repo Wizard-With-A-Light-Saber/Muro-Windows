@@ -28,6 +28,9 @@ public sealed class WallpaperEntry
     public DateTime DateAdded { get; set; } = DateTime.UtcNow;
     /// Per-wallpaper "pause after" override. Null follows the global setting; 0 means never.
     public int? PauseAfterSeconds { get; set; }
+    /// The master keeps its audio track (imported while Live Wallpaper Sound was on). Such a wallpaper always plays its
+    /// master, since the 30 fps and look copies are silent.
+    public bool HasSound { get; set; }
     /// For an import: Fingerprint.Of the source file, so importing it twice is noticed.
     public string? SourceFingerprint { get; set; }
     /// Effects (day/night, mouse, audio) for this wallpaper alone. Null follows the Settings page.

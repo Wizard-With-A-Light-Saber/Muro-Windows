@@ -52,7 +52,8 @@ public static class Importer
         {
             // The encode is nearly all of an import, so it is most of the bar; the picture is the rest.
             var scaled = progress is null ? null : new Progress<double>(p => progress.Report(p * 0.95));
-            var output = await Transcoder.TranscodeAsync(ffmpeg, source, partial, info, halveFps: false, scaled, ct).ConfigureAwait(false);
+            var keepAudio = EngineConfig.Load(root).LiveSound;
+            var output = await Transcoder.TranscodeAsync(ffmpeg, source, partial, info, halveFps: false, scaled, ct, keepAudio: keepAudio).ConfigureAwait(false);
             File.Move(partial, master, overwrite: true);
 
             // A missing thumbnail costs the card its picture and must not fail a good import.
@@ -73,6 +74,7 @@ public static class Importer
                 SizeBytes = new FileInfo(master).Length,
                 DateAdded = DateTime.UtcNow,
                 SourceFingerprint = fingerprint,
+                HasSound = keepAudio,
             };
             LibraryWriter.Update(root, m => m.Wallpapers.Add(entry));
             progress?.Report(1);

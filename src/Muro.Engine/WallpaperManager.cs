@@ -21,6 +21,8 @@ internal sealed class WallpaperManager : IDisposable
         public required string Mode;
         /// The user shader this player was started with. mpv takes it at start-up, so a change rebuilds the player.
         public string? Shader;
+        /// The video on this screen has an audio track to play when Live Wallpaper Sound is on.
+        public bool HasSound;
         /// This wallpaper's own effects; null follows the Settings page.
         public EffectsConfig? Effects;
         public PauseReason Applied = PauseReason.None;
@@ -44,6 +46,9 @@ internal sealed class WallpaperManager : IDisposable
 
     private readonly SystemEvents _events;
     private readonly Func<EngineConfig> _config;
+    /// Live Wallpaper Sound: on in the config, and which screen was given a sound wallpaper last. Only that one is heard.
+    private bool _liveSound;
+    private string? _soundMonitor;
     private readonly Func<EngineConfig.Assignment, LibraryResolver.Resolved?> _resolve;
     private readonly Dictionary<string, Slot> _slots = new();
     private readonly EffectsRunner _fx;
@@ -79,6 +84,7 @@ internal sealed class WallpaperManager : IDisposable
     public void Reconcile()
     {
         var config = _config();
+        _liveSound = config.LiveSound;
         // Looked up every time: the shell recreates its wallpaper layer on display changes.
         var target = DesktopHost.Find();
         if (target is null) { Log.Info("desktop host window not found; will retry"); Debounce(ref _reconcileTimer, 2000, Reconcile); return; }
@@ -165,6 +171,7 @@ internal sealed class WallpaperManager : IDisposable
             _lastGlobalPauseAfter = config.PauseAfterSeconds;
             foreach (var slot in _slots.Values) Arm(slot, evaluate: false);
         }
+        foreach (var slot in _slots.Values) slot.Player.SetSound(_liveSound && slot.HasSound && slot.Monitor.Id == _soundMonitor);
         var speed = Math.Clamp(config.PlaybackSpeed ?? 1.0, 0.25, 4.0);
         foreach (var slot in _slots.Values)
         {
@@ -182,6 +189,8 @@ internal sealed class WallpaperManager : IDisposable
         slot.Player.Load(video.Path);
         slot.Video = video.Path;
         slot.Mode = mode;
+        slot.HasSound = video.HasSound;
+        if (_liveSound && video.HasSound) _soundMonitor = slot.Monitor.Id;   // the one set last is the one heard
         // A new wallpaper is a new chance to watch it move, including every playlist and automation step.
         slot.WallpaperPauseAfter = video.PauseAfterSeconds;
         Arm(slot, evaluate: false);

@@ -34,6 +34,9 @@ public sealed class EngineConfig
     /// The engine's notification-area icon. On by default: with the app closed it is the way back in.
     public bool ShowTrayIcon { get; set; } = true;
 
+    /// Live Wallpaper Sound (macOS 6.1): videos imported while this is on keep their sound, and the one applied last plays it.
+    public bool LiveSound { get; set; }
+
     /// The Windows accent colour follows the wallpaper on the main display. The user's own colour is kept and comes back when off.
     public bool MatchAccent { get; set; }
 

@@ -50,7 +50,7 @@ public static class Transcoder
         (int)Math.Clamp(width * (double)height * fps * 0.045, 3_000_000, 25_000_000);
 
     /// The ffmpeg command line for one encode. Pure, so it is tested without ffmpeg.
-    public static List<string> BuildArgs(EncoderChoice encoder, string input, string output, VideoInfo info, bool halveFps, (int Width, int Height)? scaleTo = null, string? lookFilter = null)
+    public static List<string> BuildArgs(EncoderChoice encoder, string input, string output, VideoInfo info, bool halveFps, (int Width, int Height)? scaleTo = null, string? lookFilter = null, bool keepAudio = false)
     {
         var outFps = halveFps ? info.Fps / 2 : info.Fps;
         var (outWidth, outHeight) = scaleTo ?? (info.Width, info.Height);
@@ -59,8 +59,12 @@ public static class Transcoder
         var args = new List<string>
         {
             "-y", "-hide_banner", "-nostats", "-loglevel", "error", "-progress", "pipe:1",
-            "-i", input, "-map", "0:v:0", "-an", "-sn", "-dn",
+            "-i", input, "-map", "0:v:0",
         };
+        // A wallpaper is silent unless the user turned Live Wallpaper Sound on before importing it.
+        if (keepAudio) args.AddRange(["-map", "0:a:0?", "-c:a", "aac", "-b:a", "160k"]);
+        else args.Add("-an");
+        args.AddRange(["-sn", "-dn"]);
         // Dropping every second frame is exact for 2:1 sources (60 to 30, 59.94 to 29.97).
         // One -vf: ffmpeg keeps only the last one given.
         var filters = new List<string>();
@@ -93,7 +97,7 @@ public static class Transcoder
     /// Returns what the output is. The caller owns the output path and removes it on failure.
     public static async Task<VideoInfo> TranscodeAsync(
         string ffmpeg, string input, string output, VideoInfo info, bool halveFps,
-        IProgress<double>? progress, CancellationToken ct, (int Width, int Height)? scaleTo = null, string? lookFilter = null)
+        IProgress<double>? progress, CancellationToken ct, (int Width, int Height)? scaleTo = null, string? lookFilter = null, bool keepAudio = false)
     {
         var encoders = await Encoders.DetectAsync(ffmpeg, ct).ConfigureAwait(false);
         if (encoders.Count == 0) throw new TranscodeException("No video encoder works on this PC, so the video cannot be converted.");
@@ -102,7 +106,7 @@ public static class Transcoder
         foreach (var encoder in encoders)
         {
             try { File.Delete(output); } catch { }
-            var (code, stderr) = await Ffmpeg.RunAsync(ffmpeg, BuildArgs(encoder, input, output, info, halveFps, scaleTo, lookFilter),
+            var (code, stderr) = await Ffmpeg.RunAsync(ffmpeg, BuildArgs(encoder, input, output, info, halveFps, scaleTo, lookFilter, keepAudio),
                 null, progress, info.Duration, ct).ConfigureAwait(false);
             if (code == 0 && File.Exists(output))
                 return await Ffmpeg.ProbeAsync(ffmpeg, output, ct).ConfigureAwait(false)

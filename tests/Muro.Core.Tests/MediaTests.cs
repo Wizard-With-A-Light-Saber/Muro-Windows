@@ -65,6 +65,17 @@ public class MediaTests
     }
 
     [Fact]
+    public void Args_KeepAudio_MapsTheFirstAudioTrackAsAac_AndDropsTheMinusAn()
+    {
+        var info = new VideoInfo("h264", 1920, 1080, 30, 10);
+        var args = Transcoder.BuildArgs(new("hevc_nvenc", "", true, "hevc"), "in.mp4", "out.mov", info, false, keepAudio: true);
+
+        Assert.DoesNotContain("-an", args);
+        Assert.Contains("0:a:0?", args);   // the ? keeps a video with no sound importable
+        Assert.Equal("aac", args[args.IndexOf("-c:a") + 1]);
+    }
+
+    [Fact]
     public void Args_Efficient_HalvesTheFrameRate_ExactlyForNtscRates()
     {
         var args = Transcoder.BuildArgs(new("hevc_qsv", "", true, "hevc"), "in.mov", "out.mov", new VideoInfo("hevc", 1920, 1080, 59.94, 10), true);
