@@ -3,7 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="Muro">
     <NavigationView x:Name="Nav" PaneDisplayMode="Left" IsBackButtonVisible="Collapsed" IsSettingsVisible="True"
-                    OpenPaneLength="200" SelectionChanged="OnNavChanged">
+                    OpenPaneLength="224" SelectionChanged="OnNavChanged">
         <NavigationView.MenuItems>
             <NavigationViewItem Content="Featured" Tag="featured" Icon="Home" />
             <NavigationViewItem Content="Explore" Tag="explore" Icon="Globe" />
@@ -15,7 +15,7 @@
                 <RowDefinition Height="Auto" />
                 <RowDefinition Height="*" />
             </Grid.RowDefinitions>
-            <InfoBar x:Name="UpdateBar" Severity="Informational" IsOpen="False" Margin="16,8,16,0" Closed="OnUpdateBarClosed">
+            <InfoBar x:Name="UpdateBar" Severity="Informational" IsOpen="False" Margin="36,12,36,0" CornerRadius="12" Closed="OnUpdateBarClosed">
                 <InfoBar.ActionButton>
                     <Button Content="What's new" Click="OnUpdateNotes" />
                 </InfoBar.ActionButton>

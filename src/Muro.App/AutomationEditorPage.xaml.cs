@@ -184,8 +184,8 @@ public sealed partial class AutomationEditorPage : Page
             card.Children.Add(detail);
             RowsHost.Children.Add(new Border
             {
-                Padding = new Thickness(12),
-                CornerRadius = new CornerRadius(8),
+                Padding = new Thickness(16),
+                CornerRadius = (CornerRadius)Application.Current.Resources["MuroPanelRadius"],
                 BorderThickness = new Thickness(1),
                 Background = (Microsoft.UI.Xaml.Media.Brush)Application.Current.Resources["CardBackgroundFillColorDefaultBrush"],
                 BorderBrush = (Microsoft.UI.Xaml.Media.Brush)Application.Current.Resources["CardStrokeColorDefaultBrush"],

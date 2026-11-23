@@ -6,6 +6,84 @@
             <ResourceDictionary.MergedDictionaries>
                 <XamlControlsResources xmlns="using:Microsoft.UI.Xaml.Controls" />
             </ResourceDictionary.MergedDictionaries>
+
+            <!-- Rounder, softer controls everywhere (buttons, inputs, combo boxes, flyouts, dialogs). -->
+            <CornerRadius x:Key="ControlCornerRadius">8</CornerRadius>
+            <CornerRadius x:Key="OverlayCornerRadius">14</CornerRadius>
+
+            <!-- Let Mica show through the navigation pane so the window reads as layered glass. -->
+            <SolidColorBrush x:Key="NavigationViewExpandedPaneBackground" Color="Transparent" />
+            <SolidColorBrush x:Key="NavigationViewDefaultPaneBackground" Color="Transparent" />
+            <SolidColorBrush x:Key="NavigationViewTopPaneBackground" Color="Transparent" />
+
+            <!-- Shared design tokens. -->
+            <CornerRadius x:Key="MuroCardRadius">16</CornerRadius>
+            <CornerRadius x:Key="MuroCardTopRadius">16,16,0,0</CornerRadius>
+            <CornerRadius x:Key="MuroPanelRadius">12</CornerRadius>
+            <SolidColorBrush x:Key="MuroScrimBrush" Color="#66000000" />
+            <SolidColorBrush x:Key="MuroDividerBrush" Color="#14808080" />
+
+            <!-- Media card (thumbnail over details), used by Featured, Explore and Library. -->
+            <Style x:Key="MediaCard" TargetType="Grid">
+                <Setter Property="CornerRadius" Value="{StaticResource MuroCardRadius}" />
+                <Setter Property="Background" Value="{ThemeResource CardBackgroundFillColorDefaultBrush}" />
+                <Setter Property="BorderBrush" Value="{ThemeResource CardStrokeColorDefaultBrush}" />
+                <Setter Property="BorderThickness" Value="1" />
+            </Style>
+
+            <!-- Panel card (Settings and Schedules sections). -->
+            <Style x:Key="PanelCard" TargetType="Border">
+                <Setter Property="Padding" Value="20,18" />
+                <Setter Property="CornerRadius" Value="{StaticResource MuroPanelRadius}" />
+                <Setter Property="Background" Value="{ThemeResource CardBackgroundFillColorDefaultBrush}" />
+                <Setter Property="BorderBrush" Value="{ThemeResource CardStrokeColorDefaultBrush}" />
+                <Setter Property="BorderThickness" Value="1" />
+            </Style>
+
+            <!-- Rounded pill for NEW / PLAYING. -->
+            <Style x:Key="PillBadge" TargetType="Border">
+                <Setter Property="Margin" Value="12" />
+                <Setter Property="Padding" Value="10,3" />
+                <Setter Property="CornerRadius" Value="999" />
+                <Setter Property="HorizontalAlignment" Value="Left" />
+                <Setter Property="VerticalAlignment" Value="Top" />
+                <Setter Property="Background" Value="{ThemeResource AccentFillColorDefaultBrush}" />
+            </Style>
+
+            <!-- Frosted circle behind the play glyph on thumbnails. -->
+            <Style x:Key="PlayChip" TargetType="Border">
+                <Setter Property="Width" Value="52" />
+                <Setter Property="Height" Value="52" />
+                <Setter Property="CornerRadius" Value="26" />
+                <Setter Property="Background" Value="{StaticResource MuroScrimBrush}" />
+                <Setter Property="BorderBrush" Value="#33FFFFFF" />
+                <Setter Property="BorderThickness" Value="1" />
+                <Setter Property="HorizontalAlignment" Value="Center" />
+                <Setter Property="VerticalAlignment" Value="Center" />
+            </Style>
+
+            <!-- Hairline between rows inside a panel card. -->
+            <Style x:Key="RowDivider" TargetType="Rectangle">
+                <Setter Property="Height" Value="1" />
+                <Setter Property="HorizontalAlignment" Value="Stretch" />
+                <Setter Property="Fill" Value="{StaticResource MuroDividerBrush}" />
+            </Style>
+
+            <!-- Item containers that follow the card corners, so hover and focus match the card. -->
+            <Style x:Key="MediaGridItem" TargetType="GridViewItem" BasedOn="{StaticResource DefaultGridViewItemStyle}">
+                <Setter Property="Margin" Value="6" />
+                <Setter Property="Padding" Value="0" />
+                <Setter Property="MinWidth" Value="0" />
+                <Setter Property="MinHeight" Value="0" />
+                <Setter Property="CornerRadius" Value="{StaticResource MuroCardRadius}" />
+            </Style>
+            <Style x:Key="MediaListItem" TargetType="ListViewItem" BasedOn="{StaticResource DefaultListViewItemStyle}">
+                <Setter Property="Margin" Value="0,0,12,0" />
+                <Setter Property="Padding" Value="0" />
+                <Setter Property="MinWidth" Value="0" />
+                <Setter Property="MinHeight" Value="0" />
+                <Setter Property="CornerRadius" Value="{StaticResource MuroCardRadius}" />
+            </Style>
         </ResourceDictionary>
     </Application.Resources>
 </Application>

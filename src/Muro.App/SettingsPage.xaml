@@ -3,8 +3,8 @@
       xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
     <Page.Resources>
         <Style x:Key="Card" TargetType="Border">
-            <Setter Property="Padding" Value="16,14" />
-            <Setter Property="CornerRadius" Value="8" />
+            <Setter Property="Padding" Value="20,18" />
+            <Setter Property="CornerRadius" Value="{StaticResource MuroPanelRadius}" />
             <Setter Property="Background" Value="{ThemeResource CardBackgroundFillColorDefaultBrush}" />
             <Setter Property="BorderBrush" Value="{ThemeResource CardStrokeColorDefaultBrush}" />
             <Setter Property="BorderThickness" Value="1" />
@@ -12,7 +12,7 @@
         <Style x:Key="SectionLabel" TargetType="TextBlock">
             <Setter Property="FontWeight" Value="SemiBold" />
             <Setter Property="Opacity" Value="0.7" />
-            <Setter Property="Margin" Value="4,14,0,0" />
+            <Setter Property="Margin" Value="6,22,0,2" />
         </Style>
         <Style x:Key="Hint" TargetType="TextBlock">
             <Setter Property="Opacity" Value="0.7" />
@@ -22,13 +22,13 @@
     </Page.Resources>
 
     <ScrollViewer>
-        <StackPanel Padding="28,20,28,28" Spacing="8" MaxWidth="780" HorizontalAlignment="Left">
+        <StackPanel Padding="36,28,36,40" Spacing="8" MaxWidth="820" HorizontalAlignment="Left">
             <TextBlock Text="Settings" Style="{StaticResource TitleTextBlockStyle}" />
             <InfoBar x:Name="MessageBar" IsOpen="False" />
 
             <TextBlock Text="General" Style="{StaticResource SectionLabel}" />
             <Border Style="{StaticResource Card}">
-                <StackPanel Spacing="16">
+                <StackPanel Spacing="14">
                     <Grid ColumnSpacing="16">
                         <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
                         <StackPanel>
@@ -37,6 +37,7 @@
                         </StackPanel>
                         <ToggleSwitch x:Name="StartSwitch" Grid.Column="1" Toggled="OnStartToggled" />
                     </Grid>
+                    <Rectangle Style="{StaticResource RowDivider}" />
                     <Grid ColumnSpacing="16">
                         <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
                         <StackPanel>
@@ -45,6 +46,7 @@
                         </StackPanel>
                         <ToggleSwitch x:Name="TraySwitch" Grid.Column="1" Toggled="OnTrayToggled" />
                     </Grid>
+                    <Rectangle Style="{StaticResource RowDivider}" />
                     <Grid ColumnSpacing="16">
                         <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
                         <StackPanel>
@@ -59,7 +61,7 @@
 
             <TextBlock Text="Playback" Style="{StaticResource SectionLabel}" />
             <Border Style="{StaticResource Card}">
-                <StackPanel Spacing="16">
+                <StackPanel Spacing="14">
                     <Grid ColumnSpacing="16">
                         <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
                         <StackPanel>
@@ -68,6 +70,7 @@
                         </StackPanel>
                         <ComboBox x:Name="SpeedBox" Grid.Column="1" Width="130" SelectionChanged="OnSpeedChanged" />
                     </Grid>
+                    <Rectangle Style="{StaticResource RowDivider}" />
                     <Grid ColumnSpacing="16">
                         <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
                         <StackPanel>
@@ -82,7 +85,7 @@
 
             <TextBlock Text="Effects" Style="{StaticResource SectionLabel}" />
             <Border Style="{StaticResource Card}">
-                <StackPanel Spacing="16">
+                <StackPanel Spacing="14">
                     <TextBlock Style="{StaticResource Hint}" Text="Optional extras drawn over your wallpaper. All are off by default, and each one uses a little extra CPU, GPU and memory. Muro tells you how much before you turn one on." />
                     <Grid ColumnSpacing="16">
                         <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
@@ -92,6 +95,7 @@
                         </StackPanel>
                         <ToggleSwitch x:Name="DayNightSwitch" Grid.Column="1" Toggled="OnEffectToggled" />
                     </Grid>
+                    <Rectangle Style="{StaticResource RowDivider}" />
                     <Grid ColumnSpacing="16">
                         <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
                         <StackPanel>
@@ -100,6 +104,7 @@
                         </StackPanel>
                         <ToggleSwitch x:Name="CursorSwitch" Grid.Column="1" Toggled="OnEffectToggled" />
                     </Grid>
+                    <Rectangle Style="{StaticResource RowDivider}" />
                     <Grid ColumnSpacing="16">
                         <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
                         <StackPanel>
@@ -108,6 +113,7 @@
                         </StackPanel>
                         <ToggleSwitch x:Name="AudioSwitch" Grid.Column="1" Toggled="OnEffectToggled" />
                     </Grid>
+                    <Rectangle Style="{StaticResource RowDivider}" />
                     <Grid ColumnSpacing="16">
                         <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
                         <StackPanel>
@@ -117,6 +123,7 @@
                         <ComboBox x:Name="VisualizerBox" Grid.Column="1" Width="150" SelectionChanged="OnVisualizerStyleChanged" />
                         <ToggleSwitch x:Name="VisualizerSwitch" Grid.Column="2" Toggled="OnEffectToggled" />
                     </Grid>
+                    <Rectangle Style="{StaticResource RowDivider}" />
                     <Grid ColumnSpacing="16">
                         <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
                         <StackPanel>
@@ -132,7 +139,7 @@
 
             <TextBlock Text="Energy" Style="{StaticResource SectionLabel}" />
             <Border Style="{StaticResource Card}">
-                <StackPanel Spacing="16">
+                <StackPanel Spacing="14">
                     <Grid ColumnSpacing="16">
                         <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
                         <StackPanel>
@@ -141,6 +148,7 @@
                         </StackPanel>
                         <ToggleSwitch x:Name="FullscreenSwitch" Grid.Column="1" Toggled="OnEnergyToggled" />
                     </Grid>
+                    <Rectangle Style="{StaticResource RowDivider}" />
                     <Grid ColumnSpacing="16">
                         <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
                         <StackPanel>
@@ -149,6 +157,7 @@
                         </StackPanel>
                         <ToggleSwitch x:Name="SaverSwitch" Grid.Column="1" Toggled="OnEnergyToggled" />
                     </Grid>
+                    <Rectangle Style="{StaticResource RowDivider}" />
                     <Grid ColumnSpacing="16">
                         <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
                         <StackPanel>
@@ -158,6 +167,7 @@
                         <ComboBox x:Name="LowBatteryBox" Grid.Column="1" Width="90" SelectionChanged="OnLowBatteryChanged" />
                         <ToggleSwitch x:Name="LowBatterySwitch" Grid.Column="2" Toggled="OnEnergyToggled" />
                     </Grid>
+                    <Rectangle Style="{StaticResource RowDivider}" />
                     <Grid ColumnSpacing="16">
                         <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
                         <StackPanel>
@@ -171,7 +181,7 @@
 
             <TextBlock Text="Screen saver" Style="{StaticResource SectionLabel}" />
             <Border Style="{StaticResource Card}">
-                <StackPanel Spacing="16">
+                <StackPanel Spacing="14">
                     <Grid ColumnSpacing="16">
                         <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
                         <StackPanel>
@@ -180,6 +190,7 @@
                         </StackPanel>
                         <ToggleSwitch x:Name="ScreenSaverSwitch" Grid.Column="1" Toggled="OnSaverToggled" />
                     </Grid>
+                    <Rectangle Style="{StaticResource RowDivider}" />
                     <Grid ColumnSpacing="16">
                         <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
                         <StackPanel>
@@ -188,6 +199,7 @@
                         </StackPanel>
                         <ComboBox x:Name="SaverDelayBox" Grid.Column="1" Width="150" SelectionChanged="OnSaverDelayChanged" />
                     </Grid>
+                    <Rectangle Style="{StaticResource RowDivider}" />
                     <Grid ColumnSpacing="16">
                         <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
                         <StackPanel>
@@ -202,7 +214,7 @@
 
             <TextBlock Text="Lock screen" Style="{StaticResource SectionLabel}" />
             <Border Style="{StaticResource Card}">
-                <StackPanel Spacing="16">
+                <StackPanel Spacing="14">
                     <Grid ColumnSpacing="16">
                         <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
                         <StackPanel>
@@ -212,6 +224,7 @@
                         </StackPanel>
                         <ToggleSwitch x:Name="LockSwitch" Grid.Column="1" Toggled="OnLockToggled" />
                     </Grid>
+                    <Rectangle Style="{StaticResource RowDivider}" />
                     <Grid ColumnSpacing="16">
                         <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
                         <StackPanel>

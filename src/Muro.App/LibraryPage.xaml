@@ -3,7 +3,7 @@
       xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
       xmlns:local="using:Muro.App"
       AllowDrop="True" DragOver="OnDragOver" Drop="OnDrop">
-    <Grid Padding="28,20,28,16" RowSpacing="12">
+    <Grid Padding="36,28,30,20" RowSpacing="16">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
@@ -37,30 +37,28 @@
             <InfoBar x:Name="MessageBar" IsOpen="False" />
         </StackPanel>
 
-        <GridView x:Name="Grid" Grid.Row="2" SelectionMode="None" SelectionChanged="OnSelectionChanged">
+        <GridView x:Name="Grid" Grid.Row="2" SelectionMode="None" SelectionChanged="OnSelectionChanged" ItemContainerStyle="{StaticResource MediaGridItem}"
+                  Margin="-6,0,0,0">
             <GridView.ItemTemplate>
                 <DataTemplate x:DataType="local:LibraryItemVm">
-                    <Grid Width="288" Margin="6" CornerRadius="10"
-                          Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
-                          BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="1">
+                    <Grid Width="288" Style="{StaticResource MediaCard}">
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto" />
                             <RowDefinition Height="Auto" />
                         </Grid.RowDefinitions>
 
-                        <Grid Height="162" Background="Black" CornerRadius="10,10,0,0" Tapped="OnPreview">
+                        <Grid Height="162" Background="Black" CornerRadius="{StaticResource MuroCardTopRadius}" Tapped="OnPreview">
                             <Image Source="{x:Bind Thumb}" Stretch="UniformToFill" />
-                            <Border HorizontalAlignment="Left" VerticalAlignment="Top" Margin="8" Padding="8,2" CornerRadius="4"
-                                    Background="{ThemeResource AccentFillColorDefaultBrush}" Visibility="{x:Bind PlayingVisibility, Mode=OneWay}">
+                            <Border Style="{StaticResource PillBadge}" Visibility="{x:Bind PlayingVisibility, Mode=OneWay}">
                                 <TextBlock Text="PLAYING" FontSize="11" FontWeight="SemiBold" Foreground="White" />
                             </Border>
                         </Grid>
 
-                        <StackPanel Grid.Row="1" Padding="12,10,12,12" Spacing="2">
+                        <StackPanel Grid.Row="1" Padding="16,14,16,16" Spacing="2">
                             <TextBlock Text="{x:Bind Title}" FontWeight="SemiBold" TextTrimming="CharacterEllipsis" />
                             <TextBlock Text="{x:Bind Subtitle}" Opacity="0.7" FontSize="12" TextTrimming="CharacterEllipsis" />
                             <TextBlock Text="{x:Bind SizeText}" Opacity="0.7" FontSize="12" TextTrimming="CharacterEllipsis" />
-                            <Grid Margin="0,8,0,0" ColumnSpacing="8">
+                            <Grid Margin="0,12,0,0" ColumnSpacing="8">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="*" />
                                     <ColumnDefinition Width="Auto" />
