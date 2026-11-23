@@ -20,6 +20,9 @@ if (args.Contains("--list-monitors"))
     return 0;
 }
 
+// Checks an interactive wallpaper's page without looking at the screen: Muro.Engine --interactive-selftest <index.html>
+if (Array.IndexOf(args, "--interactive-selftest") is var selfTest and >= 0 && selfTest + 1 < args.Length) return InteractiveSelfTest.Run(args[selfTest + 1]);
+
 string? Opt(string name) => args.Contains(name) ? args[Array.IndexOf(args, name) + 1] : null;
 var positional = args.Where((a, i) => !a.StartsWith("--") && !a.StartsWith("muro:", StringComparison.OrdinalIgnoreCase) && (i == 0 || !new[] { "--seconds", "--low-battery", "--monitor", "--test-pause-after" }.Contains(args[i - 1]))).ToList();
 var video = positional.FirstOrDefault();

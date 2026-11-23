@@ -23,6 +23,8 @@ internal sealed class WallpaperManager : IDisposable
         public string? Shader;
         /// The video on this screen has an audio track to play when Live Wallpaper Sound is on.
         public bool HasSound;
+        /// The HTML page of an interactive wallpaper drawn over this screen's still, or null.
+        public string? InteractivePage;
         /// This wallpaper's own effects; null follows the Settings page.
         public EffectsConfig? Effects;
         public PauseReason Applied = PauseReason.None;
@@ -65,7 +67,7 @@ internal sealed class WallpaperManager : IDisposable
         _config = config;
         _resolve = resolve;
         _fx = new EffectsRunner(events, config, () => _slots.Values
-            .Select(s => new EffectsRunner.Target(s.Player, s.Monitor.Bounds, s.Applied != PauseReason.None, _target, s.Effects ?? config().Effects)).ToList());
+            .Select(s => new EffectsRunner.Target(s.Player, s.Monitor.Bounds, s.Applied != PauseReason.None, _target, s.Effects ?? config().Effects, s.InteractivePage)).ToList());
         events.DisplayChanged += () => { Log.Info("display change"); Debounce(ref _reconcileTimer, 500, Reconcile); };
         events.ShellRestarted += () => { RemoveAll(); _target = null; Debounce(ref _reconcileTimer, 1500, Reconcile); };
         events.StateChanged += () => Evaluate();
@@ -190,6 +192,7 @@ internal sealed class WallpaperManager : IDisposable
         slot.Video = video.Path;
         slot.Mode = mode;
         slot.HasSound = video.HasSound;
+        slot.InteractivePage = video.InteractivePage;
         if (_liveSound && video.HasSound) _soundMonitor = slot.Monitor.Id;   // the one set last is the one heard
         // A new wallpaper is a new chance to watch it move, including every playlist and automation step.
         slot.WallpaperPauseAfter = video.PauseAfterSeconds;

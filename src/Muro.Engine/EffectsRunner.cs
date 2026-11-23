@@ -21,7 +21,8 @@ namespace Muro.Engine;
 ///     buffer, and follows the default output device when that changes (headphones plugged in).
 internal sealed class EffectsRunner : IDisposable
 {
-    public readonly record struct Target(MpvPlayer Player, Rect Bounds, bool Paused, DesktopHost.Target? Host, EffectsConfig Fx);
+    /// <param name="Interactive">The HTML page of an interactive wallpaper on this screen (drawn over the still), or null.</param>
+    public readonly record struct Target(MpvPlayer Player, Rect Bounds, bool Paused, DesktopHost.Target? Host, EffectsConfig Fx, string? Interactive = null);
 
     // Zoom in a little while the pointer effect is on, so panning never shows the edge of the picture.
     private const double ZoomWhenPanning = 0.04, PanAmplitude = 0.012;
@@ -37,11 +38,14 @@ internal sealed class EffectsRunner : IDisposable
         public Rect Bounds;
         public TintLayer? Dim, Flash;
         public VisualizerLayer? Viz;
+        public InteractiveLayer? Web;
+        public string? LastMouse;
+        public bool WasDown;
 
         public void DisposeLayers()
         {
-            Dim?.Dispose(); Flash?.Dispose(); Viz?.Dispose();
-            Dim = Flash = null; Viz = null;
+            Dim?.Dispose(); Flash?.Dispose(); Viz?.Dispose(); Web?.Dispose();
+            Dim = Flash = null; Viz = null; Web = null; LastMouse = null;
             Sent.Remove("dim"); Sent.Remove("flash");
         }
     }
@@ -88,6 +92,13 @@ internal sealed class EffectsRunner : IDisposable
     private float _bassAverage;
     private int _beatCooldown;
 
+    // What an interactive page hears: 64 bands of the newest samples, sent to every page on the same tick.
+    private const int PageBandCount = 64;
+    private readonly float[] _pageMono = new float[Spectrum.FftSize], _pageBands = new float[PageBandCount];
+    private bool _pageSilent;
+    private static readonly string SilentAudio = "{bands:[" + string.Join(",", Enumerable.Repeat("0", PageBandCount)) + "],bass:0,mid:0,treble:0,level:0}";
+    private bool _webErrorLogged;
+
     public EffectsRunner(SystemEvents events, Func<EngineConfig> config, Func<List<Target>> targets)
     {
         _events = events;
@@ -103,12 +114,13 @@ internal sealed class EffectsRunner : IDisposable
         Prune(targets);
         var live = targets.Where(t => !t.Paused && t.Fx.Any).ToList();
         var wantViz = live.Any(t => t.Fx.Visualizer is not null);
-        var wantAudio = wantViz || live.Any(t => t.Fx.Audio);
+        var wantPage = targets.Any(t => !t.Paused && t.Interactive is not null);
+        var wantAudio = wantViz || wantPage || live.Any(t => t.Fx.Audio);
         // The clock effect keeps running while paused: a still frame should still go dark at night.
         // Every flash step repaints a whole screen layer, so audio alone runs at about 12 a second; the visualiser
         // needs about 30 to look smooth.
-        var interval = wantViz ? 33 : live.Any(t => t.Fx.Cursor) ? 50 : wantAudio ? 80 : live.Count > 0 || targets.Any(t => t.Fx.DayNight) ? 60000 : 0;
-        var key = string.Join('|', targets.Select(t => $"{t.Fx.DayNight}{t.Fx.Cursor}{t.Fx.Audio}{t.Fx.Visualizer}{t.Paused}"));
+        var interval = wantViz || wantPage ? 33 : live.Any(t => t.Fx.Cursor) ? 50 : wantAudio ? 80 : live.Count > 0 || targets.Any(t => t.Fx.DayNight) ? 60000 : 0;
+        var key = string.Join('|', targets.Select(t => $"{t.Fx.DayNight}{t.Fx.Cursor}{t.Fx.Audio}{t.Fx.Visualizer}{t.Paused}{t.Interactive}"));
 
         if (wantAudio && _capture is null && Environment.TickCount64 >= _audioRetryAt) StartAudio();
         else if (!wantAudio && _capture is not null) StopAudio();
@@ -122,7 +134,7 @@ internal sealed class EffectsRunner : IDisposable
         }
         _key = key;
         // A screen that appeared since the last tick gets the effects at once, not after a slow interval.
-        if (changed || targets.Any(t => t.Fx.Any && !_state.ContainsKey(t.Player))) Tick();
+        if (changed || targets.Any(t => (t.Fx.Any || t.Interactive is not null) && !_state.ContainsKey(t.Player))) Tick();
     }
 
     /// Players that are gone (a monitor unplugged, a wallpaper rebuilt) take their layers with them: the layers are
@@ -153,6 +165,9 @@ internal sealed class EffectsRunner : IDisposable
         var flash = (byte)(Math.Round(_pulse * FlashAlpha / 2) * 2);
         var cursor = targets.Any(t => t.Fx.Cursor) ? SystemLoad.Cursor() : null;
         if (targets.Any(t => !t.Paused && t.Fx.Visualizer is not null)) BuildFrame(now);
+        var pagesLive = targets.Any(t => !t.Paused && t.Interactive is not null);
+        var pointer = pagesLive ? DesktopPointer.Read() : null;
+        var pageAudio = pagesLive ? PageAudio(now) : null;
 
         foreach (var t in targets)
         {
@@ -164,6 +179,21 @@ internal sealed class EffectsRunner : IDisposable
                 var screenDim = fx.DayNight ? dim : (byte)0;
                 s.Dim = Layer(s.Dim, screenDim > 0, () => new TintLayer(host, t.Bounds, Night));
                 if (s.Dim is not null && Changed(s, "dim", screenDim)) s.Dim.SetAlpha(screenDim);
+                // An interactive wallpaper: its page is drawn over the still while the screen plays and hidden while it is
+                // frozen. Without a page, or when the wallpaper changes, the layer goes.
+                if (t.Interactive is { } page && File.Exists(page))
+                {
+                    if (s.Web is not null && s.Web.Page != page) { s.Web.Dispose(); s.Web = null; }
+                    if (!t.Paused)
+                    {
+                        s.Web ??= TryCreateWeb(host, t.Bounds, page);
+                        s.Web?.SetVisible(true);
+                        FeedPage(s, t.Bounds, pointer, pageAudio);
+                    }
+                    else s.Web?.SetVisible(false);
+                }
+                else if (s.Web is not null) { s.Web.Dispose(); s.Web = null; }
+
                 // A frozen screen shows no visualiser: it would be bars with no music behind a still picture.
                 if (t.Paused && s.Viz is not null) { s.Viz.Dispose(); s.Viz = null; }
                 if (t.Paused && fx.Any) continue;   // the tint above stays; nothing else moves on a frozen screen
@@ -191,6 +221,63 @@ internal sealed class EffectsRunner : IDisposable
             SetProperty(t.Player, s, "video-pan-y", s.PanY.ToString("0.0000", CultureInfo.InvariantCulture));
             if (!fx.Cursor && s.PanX == 0 && s.PanY == 0) s.Sent.Remove("video-zoom");
         }
+    }
+
+    private InteractiveLayer? TryCreateWeb(DesktopHost.Target host, Rect bounds, string page)
+    {
+        try { return new InteractiveLayer(host, bounds, page); }
+        catch (Exception ex)
+        {
+            if (!_webErrorLogged) Log.Info("interactive wallpaper failed: " + ex.Message);
+            _webErrorLogged = true;
+            return null;
+        }
+    }
+
+    /// Sends the pointer, a click and the sound to one screen's page. The pointer is 0..1 from the top left of this screen;
+    /// inside is false when it is over an app, the taskbar or another screen. Only changes are sent.
+    private static void FeedPage(PlayerFx s, Rect bounds, DesktopPointer.Sample? pointer, string? audio)
+    {
+        if (s.Web is not { } web) return;
+        if (pointer is { } p)
+        {
+            var onScreen = p.X >= bounds.X && p.X < bounds.X + bounds.Width && p.Y >= bounds.Y && p.Y < bounds.Y + bounds.Height;
+            var inside = onScreen && p.OverDesktop;
+            var nx = Math.Clamp((p.X - bounds.X) / bounds.Width, 0, 1);
+            var ny = Math.Clamp((p.Y - bounds.Y) / bounds.Height, 0, 1);
+            var xy = "x:" + nx.ToString("0.####", CultureInfo.InvariantCulture) + ",y:" + ny.ToString("0.####", CultureInfo.InvariantCulture);
+            var key = inside ? xy : "out";
+            if (key != s.LastMouse)
+            {
+                s.LastMouse = key;
+                web.Dispatch("muro:mouse", "{" + xy + ",inside:" + (inside ? "true" : "false") + "}");
+            }
+            if (p.LeftDown && !s.WasDown && inside) web.Dispatch("muro:click", "{" + xy + "}");
+            s.WasDown = p.LeftDown;
+        }
+        if (audio is not null) web.Dispatch("muro:audio", audio);
+    }
+
+    /// The page's sound event: 64 bands, and bass, mid and treble as the average of the low, middle and high bands. Null
+    /// when nothing changed (silence is sent once, then nothing until sound returns). A muted output counts as silence.
+    private string? PageAudio(long now)
+    {
+        var silent = now - Interlocked.Read(ref _audioAt) > 300 || Math.Max(_vuLeft, _vuRight) < 0.01f || OutputSilenced();
+        if (silent)
+        {
+            if (_pageSilent) return null;
+            _pageSilent = true;
+            return SilentAudio;
+        }
+        _pageSilent = false;
+        var end = _ringWrite;
+        for (var i = 0; i < _pageMono.Length; i++) _pageMono[i] = _ring[(end - _pageMono.Length + i) & (RingSize - 1)];
+        Spectrum.Bands(_pageMono, _sampleRate, _pageBands);
+
+        float Mean(int from, int to) { var sum = 0f; for (var i = from; i < to; i++) sum += _pageBands[i]; return sum / (to - from); }
+        string F(float v) => v.ToString("0.###", CultureInfo.InvariantCulture);
+        return "{bands:[" + string.Join(",", _pageBands.Select(F)) + "],bass:" + F(Mean(0, 8)) + ",mid:" + F(Mean(8, 32)) + ",treble:" + F(Mean(32, PageBandCount))
+               + ",level:" + F(Math.Max(_vuLeft, _vuRight)) + "}";
     }
 
     /// Creates the layer when it is wanted and takes it down when it is not. A window that cannot be created is

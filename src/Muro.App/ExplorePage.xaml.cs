@@ -129,7 +129,7 @@ public sealed partial class ExplorePage : Page
         var local = Services.Library.Manifest.Find(vm.Entry.Id);
         var source = local is not null
             ? LibraryManifest.Resolve(Services.Root, local.File)
-            : vm.Entry.Preview720 ?? vm.Entry.Video;
+            : vm.Entry.PreviewSource;
         try { FullscreenPreview.Show(source); }
         catch (Exception ex)
         {

@@ -24,4 +24,9 @@ public sealed class CatalogEntry
     public HostedInteractive.Entry? Interactive { get; set; }
     [System.Text.Json.Serialization.JsonIgnore]
     public string? InteractiveListUrl { get; set; }
+
+    /// What the full screen preview plays before this is downloaded: the short loop, or the video; an interactive
+    /// wallpaper has no video, so it shows its still picture.
+    [System.Text.Json.Serialization.JsonIgnore]
+    public string PreviewSource => Interactive is not null ? Thumbnail : Preview720 ?? Video;
 }

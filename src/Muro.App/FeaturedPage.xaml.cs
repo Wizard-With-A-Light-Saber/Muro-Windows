@@ -180,7 +180,7 @@ public sealed partial class FeaturedPage : Page
     {
         var source = _hero is { } entry
             ? LibraryManifest.Resolve(Services.Root, entry.File)
-            : _heroRemote is { } remote ? remote.Preview720 ?? remote.Video : null;
+            : _heroRemote is { } remote ? remote.PreviewSource : null;
         if (source is null) return;
         try { FullscreenPreview.Show(source); }
         catch (Exception ex) { ShowMessage(InfoBarSeverity.Error, "The preview could not start", ex.Message); }
@@ -214,7 +214,7 @@ public sealed partial class FeaturedPage : Page
     {
         if (VmOf(sender) is not { } vm) return;
         var local = Services.Library.Manifest.Find(vm.Entry.Id);
-        var source = local is not null ? LibraryManifest.Resolve(Services.Root, local.File) : vm.Entry.Preview720 ?? vm.Entry.Video;
+        var source = local is not null ? LibraryManifest.Resolve(Services.Root, local.File) : vm.Entry.PreviewSource;
         try { FullscreenPreview.Show(source); }
         catch (Exception ex) { ShowMessage(InfoBarSeverity.Error, "The preview could not start", ex.Message); }
     }

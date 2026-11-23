@@ -14,7 +14,7 @@ internal sealed class CatalogItemVm(CatalogEntry entry) : INotifyPropertyChanged
     public CatalogEntry Entry { get; } = entry;
     public string Title => Entry.Title;
     public string Category => Entry.Category;
-    public string Meta => Format.Resolution(Entry.Width, Entry.Height, Entry.Fps) + "  " + Format.Bytes(Entry.SizeBytes);
+    public string Meta => (Entry.Interactive is not null ? "Interactive" : Format.Resolution(Entry.Width, Entry.Height, Entry.Fps)) + "  " + Format.Bytes(Entry.SizeBytes);
     public BitmapImage Thumb => _thumb ??= new BitmapImage { DecodePixelWidth = 560, UriSource = new Uri(Entry.Thumbnail) };
 
     public bool IsNew { get; set; }
@@ -48,7 +48,7 @@ internal sealed class LibraryItemVm(WallpaperEntry entry, long bytes, bool playi
     public WallpaperEntry Entry { get; } = entry;
     public long Bytes { get; } = bytes;
     public string Title => Entry.Title;
-    public string Subtitle => Entry.Category + "  -  " + Format.Resolution(Entry.Width, Entry.Height, Entry.Fps);
+    public string Subtitle => Entry.Category + (Entry.IsInteractive ? "  -  draws itself, desktop only" : "  -  " + Format.Resolution(Entry.Width, Entry.Height, Entry.Fps));
     public string SizeText => Format.Bytes(Bytes) + (Entry.EfficientFile is null ? "" : "  (includes 30 fps copy)");
     public bool IsPlaying { get; set; } = playing;
     public Visibility PlayingVisibility => Format.Show(IsPlaying);

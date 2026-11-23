@@ -33,6 +33,15 @@ public static class Stills
         var output = PathFor(root, wallpaperId);
         if (File.Exists(output)) return output;
         if (LibraryManifest.Load(root).Find(wallpaperId) is not { } entry) return null;
+        // An interactive wallpaper already is a picture: copy it, so Windows never points at a file in the library.
+        if (entry.IsInteractive)
+        {
+            var picture = LibraryManifest.Resolve(root, entry.File);
+            if (!File.Exists(picture)) return null;
+            Directory.CreateDirectory(Path.GetDirectoryName(output)!);
+            File.Copy(picture, output, overwrite: true);
+            return output;
+        }
         var video = LibraryManifest.Resolve(root, entry.File);
         if (!File.Exists(video)) return null;
 

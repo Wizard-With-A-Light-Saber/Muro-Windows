@@ -76,8 +76,16 @@ public sealed class RemoteCatalog
             try
             {
                 var body = await response.Content.ReadAsStringAsync(timeout.Token).ConfigureAwait(false);
-                return JsonSerializer.Deserialize<RemoteCatalog>(body, LibraryManifest.Json)
-                       ?? throw new JsonException("null catalog");
+                var catalog = JsonSerializer.Deserialize<RemoteCatalog>(body, LibraryManifest.Json)
+                              ?? throw new JsonException("null catalog");
+                // The interactive wallpapers sit beside the videos; a list that is missing or broken adds nothing.
+                if (Uri.TryCreate(url, UriKind.Absolute, out _))
+                {
+                    var listUrl = HostedInteractive.ListUrl(url);
+                    foreach (var entry in await HostedInteractive.FetchListAsync(http, listUrl, ct).ConfigureAwait(false))
+                        catalog.Wallpapers.Add(HostedInteractive.CatalogEntryFor(entry, listUrl));
+                }
+                return catalog;
             }
             catch (OperationCanceledException) when (ct.IsCancellationRequested) { throw; }
             catch (JsonException) { throw new CatalogException(CatalogException.FailureKind.Unreadable); }
