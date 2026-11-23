@@ -90,7 +90,10 @@ if (fromDisk)
     var watcher = new FileSystemWatcher(AppPaths.Root, "config.json") { EnableRaisingEvents = true };
     // The config is saved by writing a temp file and renaming it over config.json, which raises
     // Created or Renamed rather than Changed, so listen to all three.
-    void Reload() => events.Post(() => { Log.Info("config changed"); config = EngineConfig.Load(AppPaths.Root); tray?.Show(config.ShowTrayIcon); lockScreen?.Sync(config); accent?.Sync(config); windowsWallpaper?.Sync(config); manager.Reconcile(); });
+    // The tray's recent wallpapers: whatever the config now puts on a screen.
+    void NoteRecents() { try { AppSettings.NoteRecent(AppPaths.Root, new[] { config.AllDisplays }.Concat(config.PerDisplay.Values).Where(a => a is not null).Select(a => a!.WallpaperID)); } catch (Exception ex) { Log.Info("recents: " + ex.Message); } }
+    NoteRecents();
+    void Reload() => events.Post(() => { Log.Info("config changed"); config = EngineConfig.Load(AppPaths.Root); NoteRecents(); tray?.Show(config.ShowTrayIcon); lockScreen?.Sync(config); accent?.Sync(config); windowsWallpaper?.Sync(config); manager.Reconcile(); });
     watcher.Changed += (_, _) => Reload();
     watcher.Created += (_, _) => Reload();
     watcher.Renamed += (_, _) => Reload();

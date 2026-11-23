@@ -50,21 +50,28 @@ internal static class LinkHandler
             if (monitorId is null) { Log.Info("link ignored (that display is not connected): " + link.Display); return; }
         }
 
+        SetWallpaper(root, entry, monitorId, link.Surface);
+        Log.Info($"link: set {entry.Title} ({link.Surface}{(monitorId is null ? "" : ", one display")})");
+    }
+
+    /// Puts a library wallpaper on a surface (and on one display, for the desktop), as picking it by hand does. Shared
+    /// by links and the tray menu.
+    public static void SetWallpaper(string root, WallpaperEntry entry, string? monitorId, string surface)
+    {
         var mode = AppSettings.Load(root).ModeFor(entry);
         var assignment = new EngineConfig.Assignment(entry.Id, mode);
-        var desktop = link.Surface is "desktop" or "all";
-        var lockScreen = link.Surface is "lockscreen" or "all";
-        var saver = link.Surface is "screensaver" or "all";
+        var desktop = surface is "desktop" or "all";
+        var lockScreen = surface is "lockscreen" or "all";
+        var saver = surface is "screensaver" or "all";
         EngineConfig.Update(root, c =>
         {
             if (desktop) { if (monitorId is null) c.AllDisplays = assignment; else c.PerDisplay[monitorId] = assignment; }
             if (lockScreen) c.LockScreen = assignment;
             if (saver) c.ScreenSaver = assignment;
         });
-        // Picking a wallpaper by hand ends a playlist or automation on that surface; a link does the same.
+        // Picking a wallpaper by hand ends a playlist or automation on that surface.
         if (desktop) ScheduleControl.Stop(root, Surface.Desktop, restore: false);
         if (lockScreen) ScheduleControl.Stop(root, Surface.LockScreen, restore: false);
         if (saver) ScheduleControl.Stop(root, Surface.ScreenSaver, restore: false);
-        Log.Info($"link: set {entry.Title} ({link.Surface}{(monitorId is null ? "" : ", one display")})");
     }
 }

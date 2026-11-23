@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using Muro.Core;
+using Muro.Core.Library;
 using Muro.Core.Schedule;
 using Muro.Platform;
 
@@ -49,8 +50,28 @@ internal sealed class EngineTray : IDisposable
         if (_runningSchedule() is { } name)
             items.Add(new($"Stop \"{name}\"", () => ScheduleControl.Stop(_root, Surface.Desktop, restore: true)));
         if (playing || _runningSchedule() is not null) items.Add(TrayIcon.Item.Separator);
+        AddRecents(items, config);
         items.Add(new("Quit Muro", quit));
         return items;
+    }
+
+    /// The ten most recent wallpapers, for all displays and, when there are several, for each display on its own (the
+    /// macOS menu bar has a page per display). Picking one does what picking it in the app does.
+    private void AddRecents(List<TrayIcon.Item> items, EngineConfig config)
+    {
+        var manifest = LibraryManifest.Load(_root);
+        var recents = AppSettings.Load(_root).Recents.Select(manifest.Find).Where(e => e is not null).Cast<WallpaperEntry>().ToList();
+        if (recents.Count == 0) return;
+
+        TrayIcon.Item Menu(string title, string? monitorId, string? current) => new(title, Children:
+            recents.Select(e => new TrayIcon.Item(e.Title, () => LinkHandler.SetWallpaper(_root, e, monitorId, "desktop"), Checked: e.Id == current)).ToList());
+
+        items.Add(Menu("Recent wallpapers", null, config.AllDisplays?.WallpaperID));
+        var monitors = Monitors.All();
+        if (monitors.Count > 1)
+            for (var n = 0; n < monitors.Count; n++)
+                items.Add(Menu("Display " + (n + 1) + (monitors[n].Primary ? " (main)" : ""), monitors[n].Id, config.AssignmentFor(monitors[n].Id)?.WallpaperID));
+        items.Add(TrayIcon.Item.Separator);
     }
 
     public void Dispose() => _icon.Dispose();

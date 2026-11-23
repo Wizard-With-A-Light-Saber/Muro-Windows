@@ -29,6 +29,21 @@ public sealed class AppSettings
     /// old "defaultMode": "smooth" that was a default, never a choice, and is ignored.
     [JsonPropertyName("qualityMode")]
     public string? DefaultMode { get; set; }
+    /// The wallpapers most recently put on a screen, newest first, for the tray menu. See <see cref="NoteRecent"/>.
+    public List<string> Recents { get; set; } = [];
+    public const int RecentLimit = 10;
+
+    /// Moves these wallpapers to the front of the recents (the engine calls this when the config changes). Writes
+    /// only when the list actually changes, so a repeat costs no disk write.
+    public static void NoteRecent(string root, IEnumerable<string> ids)
+    {
+        var wanted = ids.Distinct().ToList();
+        if (wanted.Count == 0) return;
+        var current = Load(root).Recents;
+        var next = wanted.Concat(current.Where(id => !wanted.Contains(id))).Take(RecentLimit).ToList();
+        if (!next.SequenceEqual(current)) Update(root, s => s.Recents = next);
+    }
+
     /// "light" or "dark" for the app's look; null follows Windows (System), as in the macOS app since 6.2.
     public string? Theme { get; set; }
     /// The release the user has already been told about, so the callout is not shown twice.

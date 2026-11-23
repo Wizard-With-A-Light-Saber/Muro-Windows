@@ -16,7 +16,8 @@ public static class WindowTools
 /// on the thread that runs <see cref="MessageLoop"/>. It puts the icon back when Explorer restarts.
 public sealed class TrayIcon : IDisposable
 {
-    public sealed record Item(string Text, Action? Click = null, bool Checked = false, bool Enabled = true)
+    /// <param name="Children">Makes this a submenu; its own Click is then unused.</param>
+    public sealed record Item(string Text, Action? Click = null, bool Checked = false, bool Enabled = true, IReadOnlyList<Item>? Children = null)
     {
         public static readonly Item Separator = new("-");
         public bool IsSeparator => ReferenceEquals(this, Separator);
@@ -156,21 +157,37 @@ public sealed class TrayIcon : IDisposable
         var menu = Native.CreatePopupMenu();
         try
         {
-            for (var i = 0; i < items.Count; i++)
-            {
-                var item = items[i];
-                if (item.IsSeparator) { Native.AppendMenu(menu, Native.MF_SEPARATOR, 0, null); continue; }
-                var flags = Native.MF_STRING | (item.Checked ? Native.MF_CHECKED : 0) | (item.Enabled && item.Click is not null ? 0 : Native.MF_GRAYED);
-                Native.AppendMenu(menu, flags, (nuint)(i + 1), item.Text);
-            }
+            // Every clickable item gets the next command number, in menu order; submenus are filled the same way.
+            var actions = new List<Action?>();
+            Fill(menu, items, actions);
             Native.GetCursorPos(out var at);
             // Without this the menu stays open when the user clicks elsewhere.
             Native.SetForegroundWindow(_hwnd);
             var chosen = Native.TrackPopupMenu(menu, Native.TPM_RETURNCMD | Native.TPM_RIGHTBUTTON | Native.TPM_NONOTIFY, at.X, at.Y, 0, _hwnd, 0);
             Native.PostMessage(_hwnd, Native.WM_NULL, 0, 0);
-            if (chosen > 0 && chosen <= items.Count) items[(int)chosen - 1].Click?.Invoke();
+            if (chosen > 0 && chosen <= actions.Count) actions[(int)chosen - 1]?.Invoke();
         }
-        finally { Native.DestroyMenu(menu); }
+        finally { Native.DestroyMenu(menu); }   // also destroys the submenus attached to it
+    }
+
+    private const uint MF_POPUP = 0x00000010;
+
+    private static void Fill(nint menu, IReadOnlyList<Item> items, List<Action?> actions)
+    {
+        foreach (var item in items)
+        {
+            if (item.IsSeparator) { Native.AppendMenu(menu, Native.MF_SEPARATOR, 0, null); continue; }
+            var grayed = item.Enabled && (item.Click is not null || item.Children is { Count: > 0 }) ? 0 : Native.MF_GRAYED;
+            if (item.Children is { Count: > 0 } children)
+            {
+                var sub = Native.CreatePopupMenu();
+                Fill(sub, children, actions);
+                Native.AppendMenu(menu, Native.MF_STRING | MF_POPUP | grayed, (nuint)sub, item.Text);
+                continue;
+            }
+            actions.Add(item.Click);
+            Native.AppendMenu(menu, Native.MF_STRING | (item.Checked ? Native.MF_CHECKED : 0) | grayed, (nuint)actions.Count, item.Text);
+        }
     }
 
     public void Dispose()
