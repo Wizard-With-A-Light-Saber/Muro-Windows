@@ -325,7 +325,7 @@ public sealed partial class LibraryPage : Page
     {
         if (!e.DataView.Contains(StandardDataFormats.StorageItems)) return;
         var dropped = await e.DataView.GetStorageItemsAsync();
-        await ImportAsync(dropped.OfType<StorageFile>().Select(f => f.Path).ToList(), dropped.Count);
+        await ImportAsync(dropped.Select(item => item.Path).ToList(), dropped.Count);   // files, and folders that hold a page
     }
 
     private async void OnImportClick(object sender, RoutedEventArgs e)
@@ -333,6 +333,8 @@ public sealed partial class LibraryPage : Page
         var picker = new FileOpenPicker();
         InitializeWithWindow.Initialize(picker, MainWindow.Instance!.Handle);
         foreach (var extension in Importer.Extensions) picker.FileTypeFilter.Add(extension);
+        picker.FileTypeFilter.Add(".html");   // an interactive wallpaper's page (a folder with one is dropped on the page instead)
+        picker.FileTypeFilter.Add(".htm");
         var files = await picker.PickMultipleFilesAsync();
         if (files.Count > 0) await ImportAsync(files.Select(f => f.Path).ToList(), files.Count);
     }
@@ -341,14 +343,15 @@ public sealed partial class LibraryPage : Page
     {
         if (Services.Library.Damaged) return;
         var videos = paths.Where(Importer.IsVideo).ToList();
-        var skipped = offered - videos.Count;
-        if (videos.Count == 0)
+        var pages = paths.Where(InteractiveImport.IsPage).ToList();
+        var skipped = offered - videos.Count - pages.Count;
+        if (videos.Count == 0 && pages.Count == 0)
         {
-            ShowMessage(InfoBarSeverity.Warning, "Nothing was added", "Muro imports MP4, MOV, M4V, MKV, WebM and AVI videos.");
+            ShowMessage(InfoBarSeverity.Warning, "Nothing was added", "Muro imports MP4, MOV, M4V, MKV, WebM and AVI videos, and interactive wallpapers: an HTML page, or a folder with one.");
             return;
         }
         var ffmpeg = Ffmpeg.Locate();
-        if (ffmpeg is null)
+        if (videos.Count > 0 && ffmpeg is null)
         {
             ShowMessage(InfoBarSeverity.Error, "Muro cannot convert videos", "The bundled video converter (ffmpeg) is missing, so nothing can be imported.");
             return;
@@ -358,6 +361,19 @@ public sealed partial class LibraryPage : Page
         var already = new List<string>();
         var failures = new List<string>();
         var done = 0;
+        var pagesDone = 0;
+        // Interactive pages first: a copy of a small folder, no encoding. Each gets a plain picture with its name.
+        foreach (var page in pages)
+        {
+            try
+            {
+                var (still, thumb) = PlaceholderStill.Make(InteractiveImport.TitleOf(page));
+                await Task.Run(() => InteractiveImport.Import(Services.Root, page, still, thumb));
+                pagesDone++;
+                Reload();
+            }
+            catch (IOException ex) { failures.Add(Path.GetFileName(page.TrimEnd('\\', '/')) + ": " + ex.Message); }
+        }
         try
         {
             for (var i = 0; i < videos.Count; i++)
@@ -367,7 +383,7 @@ public sealed partial class LibraryPage : Page
                 try
                 {
                     var progress = new Progress<double>(p => BusyProgress.Value = p * 100);
-                    var result = await Importer.ImportAsync(ffmpeg, Services.Root, videos[i], progress: progress, ct: cts.Token);
+                    var result = await Importer.ImportAsync(ffmpeg!, Services.Root, videos[i], progress: progress, ct: cts.Token);
                     if (result.Duplicate) already.Add(result.Entry.Title); else done++;
                     Reload();
                 }
@@ -383,6 +399,7 @@ public sealed partial class LibraryPage : Page
 
         var notes = new List<string>();
         if (done > 0) notes.Add(done + (done == 1 ? " video imported." : " videos imported."));
+        if (pagesDone > 0) notes.Add(pagesDone + (pagesDone == 1 ? " interactive wallpaper imported." : " interactive wallpapers imported."));
         if (already.Count > 0) notes.Add(already.Count == 1 ? already[0] + " is already in your library." : already.Count + " were already in your library.");
         if (skipped > 0) notes.Add(skipped + (skipped == 1 ? " file was skipped (not a video)." : " files were skipped (not videos)."));
         notes.AddRange(failures);
