@@ -69,6 +69,25 @@ public class SchedulerTests
         }
     }
 
+    [Theory]
+    [InlineData(8, 7, 30, 8, 30)]    // every 30 minutes lands on :00 and :30
+    [InlineData(8, 30, 30, 9, 0)]    // exactly on a boundary: the next one
+    [InlineData(8, 7, 60, 9, 0)]     // every hour is on the hour
+    [InlineData(23, 55, 30, 24, 0)]  // the count restarts at midnight
+    [InlineData(8, 0, 7, 8, 3)]      // 7 does not divide the day: boundaries at 476 and 483 minutes after midnight
+    public void Playlist_ChangesOnTheClock(int hour, int minute, int every, int wakeHour, int wakeMinute)
+    {
+        var h = new Harness();
+        h.Time.SetLocal(hour, minute);
+        h.Time.Utc = new DateTime(2026, 10, 26, hour, minute, 0, DateTimeKind.Utc);
+        var playlist = Playlist("p", every, false, "a", "b");
+        h.Scheduler.Update([], [playlist]);
+
+        h.Scheduler.StartPlaylist(playlist);
+
+        Assert.Equal(h.Time.Utc.Date.AddHours(wakeHour).AddMinutes(wakeMinute), h.Scheduler.NextWakeUtc);
+    }
+
     /// Re-evaluating for an unrelated reason must never skip an entry: only a passed deadline advances.
     [Fact]
     public void Playlist_ReevaluateBeforeTheDeadline_DoesNotSkipAnything()
@@ -85,7 +104,7 @@ public class SchedulerTests
         h.Time.Advance(TimeSpan.FromMinutes(7));   // past the deadline, as after a sleep
         h.Scheduler.Reevaluate();
         Assert.Equal(["a", "b"], h.Applied);
-        Assert.Equal(h.Time.Utc.AddMinutes(10), h.Scheduler.NextWakeUtc);   // the clock restarts from the change
+        Assert.Equal(new DateTime(2026, 10, 26, 8, 20, 0, DateTimeKind.Utc), h.Scheduler.NextWakeUtc);   // the next boundary on the clock (it is 08:11 now)
     }
 
     [Fact]

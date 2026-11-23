@@ -215,8 +215,21 @@ public sealed class Scheduler
     private static Step? StepAt(Automation automation, int index) =>
         index >= 0 && index < automation.Steps.Count ? automation.Steps[index] : null;
 
-    private DateTime PlaylistDeadline(Playlist playlist) =>
-        StepStartedAtUtc.AddSeconds(Math.Max(1, playlist.IntervalMinutes) * 60.0);
+    /// A playlist changes on the clock, as the macOS app does since 6.2: every 30 minutes is :00 and :30, every hour
+    /// is on the hour, any other length is counted from local midnight. The first wallpaper may therefore show for
+    /// less than a full interval. The count restarts at midnight, so an interval that does not divide the day (7
+    /// minutes) still has a boundary at 00:00.
+    /// shortcut: the local offset is taken from the two clocks now, so a daylight-saving change inside one interval
+    /// lands one hour off for that single change; the next deadline is right again.
+    private DateTime PlaylistDeadline(Playlist playlist)
+    {
+        var minutes = Math.Max(1, playlist.IntervalMinutes);
+        var offset = _localNow() - _utcNow();
+        var startLocal = StepStartedAtUtc + offset;
+        var sinceMidnight = (startLocal - startLocal.Date).TotalMinutes;
+        var next = Math.Min(1440, (Math.Floor(sinceMidnight / minutes) + 1) * minutes);
+        return startLocal.Date.AddMinutes(next) - offset;
+    }
 
     /// When the host should call <see cref="Fire"/> next: one wake per step, or one per day boundary for
     /// a clock schedule. Null when nothing is running. Never earlier than a second from now.
