@@ -49,6 +49,7 @@ public sealed partial class SettingsPage : Page
         TraySwitch.IsOn = config.ShowTrayIcon;
         AccentSwitch.IsOn = config.MatchAccent;
         SoundSwitch.IsOn = config.LiveSound;
+        LinksSwitch.IsOn = !config.LinksOff;
         ThemeBox.ItemsSource = new[] { "System", "Light", "Dark" };
         ThemeBox.SelectedIndex = Array.IndexOf(ThemeNames, AppSettings.Load(Services.Root).Theme) is var t and >= 0 ? t : 0;
 
@@ -163,6 +164,13 @@ public sealed partial class SettingsPage : Page
         if (_loading || SpeedBox.SelectedIndex < 0) return;
         var speed = Speeds[SpeedBox.SelectedIndex].Speed;
         Change(() => EngineConfig.Update(Services.Root, c => c.PlaybackSpeed = Math.Abs(speed - 1.0) < 0.01 ? null : speed));
+    }
+
+    private void OnLinksToggled(object sender, RoutedEventArgs e)
+    {
+        if (_loading) return;
+        var off = !LinksSwitch.IsOn;
+        Change(() => EngineConfig.Update(Services.Root, c => c.LinksOff = off));
     }
 
     private void OnSoundToggled(object sender, RoutedEventArgs e)

@@ -21,7 +21,7 @@ if (args.Contains("--list-monitors"))
 }
 
 string? Opt(string name) => args.Contains(name) ? args[Array.IndexOf(args, name) + 1] : null;
-var positional = args.Where((a, i) => !a.StartsWith("--") && (i == 0 || !new[] { "--seconds", "--low-battery", "--monitor", "--test-pause-after" }.Contains(args[i - 1]))).ToList();
+var positional = args.Where((a, i) => !a.StartsWith("--") && !a.StartsWith("muro:", StringComparison.OrdinalIgnoreCase) && (i == 0 || !new[] { "--seconds", "--low-battery", "--monitor", "--test-pause-after" }.Contains(args[i - 1]))).ToList();
 var video = positional.FirstOrDefault();
 var perMonitor = args.Select((a, i) => (a, i)).Where(t => t.a == "--monitor").Select(t => args[t.i + 1]).ToList();
 var seconds = int.TryParse(Opt("--seconds"), out var s) ? s : 0;
@@ -30,10 +30,14 @@ var pauseAfter = int.TryParse(Opt("--test-pause-after"), out var pa) ? pa : 0;
 AppPaths.Ensure();
 // Run by the uninstaller: put the user's own Windows wallpaper back, then stop.
 if (args.Contains("--restore-windows-wallpaper")) { WindowsWallpaperService.RestoreOriginal(AppPaths.Root); return 0; }
+// A muro:// link (a Shortcut, a script, another app): carry it out by writing config.json. If no engine is running
+// this process then carries on as the engine, so a link works whether Muro is running or not.
+if (args.FirstOrDefault(a => a.StartsWith("muro:", StringComparison.OrdinalIgnoreCase)) is { } link) LinkHandler.Run(AppPaths.Root, link);
 // One engine per library. The app starts the engine on demand and must never start a second.
 using var singleInstance = new Mutex(true, "Muro.Engine." + Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(AppPaths.Root.ToLowerInvariant())))[..16], out var firstEngine);
 if (!firstEngine) { Console.Error.WriteLine("Muro engine is already running."); return 0; }
 var fromDisk = video is null && perMonitor.Count == 0;
+if (fromDisk && Environment.ProcessPath is { } enginePath) { try { UrlProtocol.Register(enginePath); } catch (Exception ex) { Log.Info("muro:// links could not be registered: " + ex.Message); } }
 var config = fromDisk ? EngineConfig.Load(AppPaths.Root) : new EngineConfig();
 if (!fromDisk)
 {

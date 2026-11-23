@@ -42,6 +42,9 @@ Name: "{userdesktop}\Muro"; Filename: "{app}\Muro.exe"; Tasks: desktopicon
 ; The same entry the app's Settings writes: start the engine, which shows the tray icon and plays the wallpaper.
 Root: HKCU; Subkey: "Software\Microsoft\Windows\CurrentVersion\Run"; ValueType: string; ValueName: "Muro"; ValueData: """{app}\Muro.Engine.exe"""; Tasks: startup
 
+; muro:// links are registered by the engine when it starts (see UrlProtocol); this only removes them on uninstall.
+Root: HKCU; Subkey: "Software\Classes\muro"; Flags: uninsdeletekey
+
 [Run]
 Filename: "{app}\Muro.exe"; Description: "Start Muro"; Flags: nowait postinstall skipifsilent
 

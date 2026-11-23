@@ -34,6 +34,9 @@ public sealed class EngineConfig
     /// The engine's notification-area icon. On by default: with the app closed it is the way back in.
     public bool ShowTrayIcon { get; set; } = true;
 
+    /// muro:// links from other apps are ignored while this is on (the macOS "linksOff"). Off by default, so links work.
+    public bool LinksOff { get; set; }
+
     /// Live Wallpaper Sound (macOS 6.1): videos imported while this is on keep their sound, and the one applied last plays it.
     public bool LiveSound { get; set; }
 

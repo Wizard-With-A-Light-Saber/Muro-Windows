@@ -41,6 +41,15 @@
                     <Grid ColumnSpacing="16">
                         <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
                         <StackPanel>
+                            <TextBlock Text="Links from other apps" />
+                            <TextBlock Style="{StaticResource Hint}" Text="Let a script, a shortcut or a web page switch wallpaper, pause or resume with a muro:// link. A link can only use wallpapers already in your library and never starts a download." />
+                        </StackPanel>
+                        <ToggleSwitch x:Name="LinksSwitch" Grid.Column="1" Toggled="OnLinksToggled" />
+                    </Grid>
+                    <Rectangle Style="{StaticResource RowDivider}" />
+                    <Grid ColumnSpacing="16">
+                        <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
+                        <StackPanel>
                             <TextBlock Text="Live wallpaper sound" />
                             <TextBlock Style="{StaticResource Hint}" Text="Videos you import from now on keep their sound. The wallpaper you set last is the one you hear. Downloaded wallpapers stay silent." />
                         </StackPanel>
