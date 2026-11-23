@@ -141,5 +141,12 @@
  "Edit": "Modifier",
  "Display": "Écran",
  "(main)": "(principal)",
- "Never": "Jamais"
+ "Never": "Jamais",
+ "PLAYING NOW": "EN COURS DE LECTURE",
+ "FROM YOUR LIBRARY": "DE VOTRE BIBLIOTHÈQUE",
+ "Apply again": "Appliquer à nouveau",
+ "NEW IN MURO": "NOUVEAU DANS MURO",
+ "Downloading...": "Téléchargement...",
+ "Interactive": "Interactif",
+ "All categories": "Toutes les catégories"
 }

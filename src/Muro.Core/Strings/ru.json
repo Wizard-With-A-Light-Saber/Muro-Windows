@@ -141,5 +141,12 @@
  "Edit": "Изменить",
  "Display": "Дисплей",
  "(main)": "(основной)",
- "Never": "Никогда"
+ "Never": "Никогда",
+ "PLAYING NOW": "СЕЙЧАС ИГРАЕТ",
+ "FROM YOUR LIBRARY": "ИЗ ВАШЕЙ БИБЛИОТЕКИ",
+ "Apply again": "Применить снова",
+ "NEW IN MURO": "НОВОЕ В MURO",
+ "Downloading...": "Загрузка...",
+ "Interactive": "Интерактивные",
+ "All categories": "Все категории"
 }

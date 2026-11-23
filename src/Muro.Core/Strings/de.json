@@ -141,5 +141,12 @@
  "Edit": "Bearbeiten",
  "Display": "Bildschirm",
  "(main)": "(Hauptbildschirm)",
- "Never": "Nie"
+ "Never": "Nie",
+ "PLAYING NOW": "LÄUFT GERADE",
+ "FROM YOUR LIBRARY": "AUS DEINER MEDIATHEK",
+ "Apply again": "Erneut anwenden",
+ "NEW IN MURO": "NEU IN MURO",
+ "Downloading...": "Wird geladen ...",
+ "Interactive": "Interaktiv",
+ "All categories": "Alle Kategorien"
 }

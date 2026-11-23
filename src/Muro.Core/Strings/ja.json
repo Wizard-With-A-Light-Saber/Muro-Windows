@@ -141,5 +141,12 @@
  "Edit": "編集",
  "Display": "ディスプレイ",
  "(main)": "(メイン)",
- "Never": "なし"
+ "Never": "なし",
+ "PLAYING NOW": "再生中",
+ "FROM YOUR LIBRARY": "ライブラリから",
+ "Apply again": "もう一度適用",
+ "NEW IN MURO": "Muro の新着",
+ "Downloading...": "ダウンロード中...",
+ "Interactive": "インタラクティブ",
+ "All categories": "すべてのカテゴリ"
 }

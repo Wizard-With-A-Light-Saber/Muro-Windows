@@ -141,5 +141,12 @@
  "Edit": "편집",
  "Display": "디스플레이",
  "(main)": "(주)",
- "Never": "안 함"
+ "Never": "안 함",
+ "PLAYING NOW": "지금 재생 중",
+ "FROM YOUR LIBRARY": "내 라이브러리에서",
+ "Apply again": "다시 적용",
+ "NEW IN MURO": "Muro 신규",
+ "Downloading...": "다운로드 중...",
+ "Interactive": "인터랙티브",
+ "All categories": "모든 카테고리"
 }

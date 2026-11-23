@@ -118,10 +118,10 @@ public sealed partial class FeaturedPage : Page
             var thumb = string.IsNullOrEmpty(entry.Thumbnail) ? null : LibraryManifest.Resolve(Services.Root, entry.Thumbnail);
             HeroImage.Source = thumb is not null && File.Exists(thumb) ? new BitmapImage { DecodePixelWidth = 1600, UriSource = new Uri(thumb) } : null;
             HeroTitle.Text = entry.Title;
-            HeroMeta.Text = entry.Category + "  -  " + Format.Resolution(entry.Width, entry.Height, entry.Fps);
+            HeroMeta.Text = entry.Category + "  -  " + (entry.IsInteractive ? Loc.T("Interactive") : Format.Resolution(entry.Width, entry.Height, entry.Fps));
             var isPlaying = playing.Contains(entry.Id);
-            HeroEyebrow.Text = isPlaying ? "PLAYING NOW" : "FROM YOUR LIBRARY";
-            HeroPrimary.Content = isPlaying ? "Apply again" : "Apply";
+            HeroEyebrow.Text = isPlaying ? Loc.T("PLAYING NOW") : Loc.T("FROM YOUR LIBRARY");
+            HeroPrimary.Content = isPlaying ? Loc.T("Apply again") : Loc.T("Apply");
             HeroPrimary.IsEnabled = !_applying;
             HeroProgress.Visibility = Visibility.Collapsed;
         }
@@ -129,8 +129,8 @@ public sealed partial class FeaturedPage : Page
         {
             HeroImage.Source = new BitmapImage { DecodePixelWidth = 1600, UriSource = new Uri(remote.Thumbnail) };
             HeroTitle.Text = remote.Title;
-            HeroMeta.Text = remote.Category + "  -  " + Format.Resolution(remote.Width, remote.Height, remote.Fps) + "  " + Format.Bytes(remote.SizeBytes);
-            HeroEyebrow.Text = "NEW IN MURO";
+            HeroMeta.Text = remote.Category + "  -  " + (remote.Interactive is not null ? Loc.T("Interactive") : Format.Resolution(remote.Width, remote.Height, remote.Fps)) + "  " + Format.Bytes(remote.SizeBytes);
+            HeroEyebrow.Text = Loc.T("NEW IN MURO");
             ShowHeroDownload(remote.Id);
         }
     }
@@ -138,7 +138,7 @@ public sealed partial class FeaturedPage : Page
     private void ShowHeroDownload(string id)
     {
         var downloading = Services.Downloads.IsActive(id);
-        HeroPrimary.Content = downloading ? "Downloading..." : "Download";
+        HeroPrimary.Content = downloading ? Loc.T("Downloading...") : Loc.T("Download");
         HeroPrimary.IsEnabled = !downloading;
         HeroProgress.Visibility = Format.Show(downloading);
         HeroProgress.Value = Services.Downloads.ProgressOf(id) * 100;

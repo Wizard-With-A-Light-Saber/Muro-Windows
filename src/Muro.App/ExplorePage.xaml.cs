@@ -1,5 +1,6 @@
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using Muro.Core;
 using Muro.Core.Catalog;
 using Muro.Core.Library;
 
@@ -7,7 +8,7 @@ namespace Muro.App;
 
 public sealed partial class ExplorePage : Page
 {
-    private const string AllCategories = "All categories";
+    private static readonly string AllCategories = Loc.T("All categories");   // read once the language is set
     private readonly Dictionary<string, CatalogItemVm> _vms = [];
     private bool _updatingCategories;
 
@@ -68,7 +69,7 @@ public sealed partial class ExplorePage : Page
         var query = SearchBox.Text.Trim();
         var category = CategoryBox.SelectedItem as string;
         var shown = Services.Catalog.Items
-            .Where(i => (category is null or AllCategories || i.Category == category)
+            .Where(i => (category is null || category == AllCategories || i.Category == category)
                         && (query.Length == 0 || i.Title.Contains(query, StringComparison.OrdinalIgnoreCase)))
             .Select(i => _vms[i.Id])
             .ToList();
