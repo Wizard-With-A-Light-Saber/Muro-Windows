@@ -116,7 +116,7 @@ public static class EfficientVariant
 
     /// Whether this wallpaper's Efficient copy is still to be made: it has none yet and it is worth one.
     public static bool Needs(WallpaperEntry entry) =>
-        entry.ActiveLook != entry.BakedLook
+        !entry.IsInteractive && entry.ActiveLook != entry.BakedLook
         || (entry.EfficientFile is null && (entry.Fps > MinimumFps || TargetSize(entry.Width, entry.Height) is not null));
 
     /// Whether a copy is worth having at all: a look to bake, a high frame rate, or a source much bigger than the screen.

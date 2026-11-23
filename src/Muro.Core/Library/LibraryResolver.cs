@@ -6,7 +6,7 @@ public static class LibraryResolver
 {
     /// <paramref name="IsEfficientFile"/> is true when the file is the 30 fps variant, so the player
     /// needs no frame-rate filter on top.
-    public readonly record struct Resolved(string Path, bool IsEfficientFile, int? PauseAfterSeconds = null, EffectsConfig? Effects = null, bool HasSound = false);
+    public readonly record struct Resolved(string Path, bool IsEfficientFile, int? PauseAfterSeconds = null, EffectsConfig? Effects = null, bool HasSound = false, string? InteractivePage = null);
 
     public static Resolved? Resolve(string root, EngineConfig.Assignment assignment)
     {
@@ -18,6 +18,14 @@ public static class LibraryResolver
 
         // A baked look lives only in the screen-sized copy, so it plays that copy in every quality mode. Until the copy
         // is made (or if its file is gone) the plain wallpaper plays.
+        // An interactive wallpaper plays its still; the engine draws the page over it. A missing page falls back to the still alone.
+        if (entry.IsInteractive)
+        {
+            var still = LibraryManifest.Resolve(root, entry.File);
+            var page = LibraryManifest.Resolve(root, entry.InteractivePage!);
+            return File.Exists(still) ? new Resolved(still, false, entry.PauseAfterSeconds, entry.Effects, false, File.Exists(page) ? page : null) : null;
+        }
+
         var lookBaked = entry.ActiveLook is not null && entry.BakedLook == entry.ActiveLook;
         if (!entry.HasSound && (assignment.IsEfficient || lookBaked) && entry.EfficientFile is { } variant)
         {

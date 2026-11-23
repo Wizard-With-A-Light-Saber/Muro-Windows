@@ -45,9 +45,17 @@ public sealed class WallpaperEntry
     public string? ActiveLook => Media.Looks.Filter(Look) is null ? null : Look;
 
     /// Every file this wallpaper owns. Deleting a wallpaper deletes exactly these.
+    /// An interactive wallpaper: the HTML page the engine draws over the still on the desktop, e.g.
+    /// "Hosted Interactive/{id}/index.html". Its <see cref="File"/> is the still picture, which is what plays everywhere
+    /// the page cannot (lock screen, screen saver, a paused or covered screen).
+    public string? InteractivePage { get; set; }
+
+    [JsonIgnore]
+    public bool IsInteractive => !string.IsNullOrEmpty(InteractivePage);
+
     [JsonIgnore]
     public IEnumerable<string> RelativeFiles =>
-        new[] { File, EfficientFile, PreviewFile, Thumbnail }.Where(f => !string.IsNullOrEmpty(f))!;
+        new[] { File, EfficientFile, PreviewFile, Thumbnail, InteractivePage }.Where(f => !string.IsNullOrEmpty(f))!;
 
     [JsonIgnore]
     public bool IsImported => Category == ImportedCategory;

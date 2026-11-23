@@ -10,6 +10,9 @@ public static class Downloader
     public static async Task<WallpaperEntry> DownloadAsync(
         HttpClient http, CatalogEntry remote, string root, IProgress<double>? progress = null, CancellationToken ct = default)
     {
+        // An interactive wallpaper is a small folder of checked files, not one video.
+        if (remote.Interactive is not null) return await HostedInteractive.DownloadAsync(http, remote, root, progress, ct).ConfigureAwait(false);
+
         if (DownloadFolder.GetLocation(root) is DownloadFolder.Location.Unavailable unavailable)
             throw new DownloadFolder.MoveException(DownloadFolder.MoveError.NotConnected,
                 "Connect " + DownloadFolder.PlaceName(unavailable.Path) + " first. Your wallpapers are on it.");

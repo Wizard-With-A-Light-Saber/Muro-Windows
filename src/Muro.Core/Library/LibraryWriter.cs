@@ -40,8 +40,11 @@ public static class LibraryWriter
     public static LibraryManifest Delete(string root, IReadOnlySet<string> ids)
     {
         var doomed = new List<string>();
+        var folders = new List<string>();
         var manifest = Update(root, m =>
         {
+            // An interactive wallpaper is a whole folder (its page may have more files than the manifest names).
+            folders.AddRange(m.Wallpapers.Where(w => ids.Contains(w.Id) && w.IsInteractive).Select(w => Catalog.HostedInteractive.FolderFor(root, w.Id)));
             doomed.AddRange(m.Wallpapers.Where(w => ids.Contains(w.Id)).SelectMany(w => w.RelativeFiles));
             m.Wallpapers.RemoveAll(w => ids.Contains(w.Id));
         });
@@ -54,6 +57,10 @@ public static class LibraryWriter
                 try { File.Delete(LibraryManifest.Resolve(root, relative)); return true; } catch { return false; }
             });
             if (doomed.Count > 0) Thread.Sleep(400);
+        }
+        foreach (var folder in folders)
+        {
+            try { if (Directory.Exists(folder)) Directory.Delete(folder, recursive: true); } catch { }
         }
         return manifest;
     }

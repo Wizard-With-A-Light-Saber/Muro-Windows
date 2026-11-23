@@ -18,4 +18,10 @@ public sealed class CatalogEntry
     public string? Preview720 { get; set; }
     /// When it first reached the catalog. Absent in older catalogs.
     public DateTime? PublishedAt { get; set; }
+
+    /// Set for an interactive wallpaper (from interactive.json, not catalog.json): what to download and from where.
+    [System.Text.Json.Serialization.JsonIgnore]
+    public HostedInteractive.Entry? Interactive { get; set; }
+    [System.Text.Json.Serialization.JsonIgnore]
+    public string? InteractiveListUrl { get; set; }
 }
