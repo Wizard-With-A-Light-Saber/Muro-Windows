@@ -32,6 +32,15 @@
                     <Grid ColumnSpacing="16">
                         <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
                         <StackPanel>
+                            <TextBlock Text="Theme" />
+                            <TextBlock Style="{StaticResource Hint}" Text="Light, Dark, or System to follow Windows" />
+                        </StackPanel>
+                        <ComboBox x:Name="ThemeBox" Grid.Column="1" Width="130" SelectionChanged="OnThemeChanged" />
+                    </Grid>
+                    <Rectangle Style="{StaticResource RowDivider}" />
+                    <Grid ColumnSpacing="16">
+                        <Grid.ColumnDefinitions><ColumnDefinition Width="*" /><ColumnDefinition Width="Auto" /></Grid.ColumnDefinitions>
+                        <StackPanel>
                             <TextBlock Text="Start with Windows" />
                             <TextBlock x:Name="StartNote" Style="{StaticResource Hint}" Text="Starts Muro quietly in the background when you sign in" />
                         </StackPanel>

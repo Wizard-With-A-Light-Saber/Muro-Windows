@@ -16,6 +16,7 @@ public sealed partial class SettingsPage : Page
     private static readonly (string Label, double Speed)[] Speeds = [("0.5x", 0.5), ("0.75x", 0.75), ("1x", 1.0), ("1.25x", 1.25), ("1.5x", 1.5)];
     private static readonly string[] QualityModes = [PlaybackMode.Auto, PlaybackMode.Smooth, PlaybackMode.Efficient];
     private static readonly int[] LowBatteryLevels = [10, 15, 20, 30, 40, 50];
+    private static readonly string?[] ThemeNames = [null, "light", "dark"];
     private bool _loading;
 
     public SettingsPage()
@@ -47,6 +48,8 @@ public sealed partial class SettingsPage : Page
             : "Starts Muro quietly in the background when you sign in";
         TraySwitch.IsOn = config.ShowTrayIcon;
         AccentSwitch.IsOn = config.MatchAccent;
+        ThemeBox.ItemsSource = new[] { "System", "Light", "Dark" };
+        ThemeBox.SelectedIndex = Array.IndexOf(ThemeNames, AppSettings.Load(Services.Root).Theme) is var t and >= 0 ? t : 0;
 
         SpeedBox.ItemsSource = Speeds.Select(s => s.Label).ToList();
         var speed = config.PlaybackSpeed ?? 1.0;
@@ -159,6 +162,14 @@ public sealed partial class SettingsPage : Page
         if (_loading || SpeedBox.SelectedIndex < 0) return;
         var speed = Speeds[SpeedBox.SelectedIndex].Speed;
         Change(() => EngineConfig.Update(Services.Root, c => c.PlaybackSpeed = Math.Abs(speed - 1.0) < 0.01 ? null : speed));
+    }
+
+    private void OnThemeChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (_loading || ThemeBox.SelectedIndex < 0) return;
+        var theme = ThemeNames[ThemeBox.SelectedIndex];
+        Change(() => AppSettings.Update(Services.Root, s => s.Theme = theme));
+        MainWindow.Instance?.ApplyTheme();
     }
 
     private void OnQualityChanged(object sender, SelectionChangedEventArgs e)

@@ -29,6 +29,8 @@ public sealed class AppSettings
     /// old "defaultMode": "smooth" that was a default, never a choice, and is ignored.
     [JsonPropertyName("qualityMode")]
     public string? DefaultMode { get; set; }
+    /// "light" or "dark" for the app's look; null follows Windows (System), as in the macOS app since 6.2.
+    public string? Theme { get; set; }
     /// The release the user has already been told about, so the callout is not shown twice.
     public string? SeenUpdateVersion { get; set; }
     /// The wallpaper chosen for the Featured banner. Falls back when it is no longer in the library.

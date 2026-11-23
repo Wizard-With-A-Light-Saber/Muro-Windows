@@ -1,4 +1,5 @@
 using Microsoft.UI.Windowing;
+using Muro.Core;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media;
@@ -29,12 +30,25 @@ public sealed partial class MainWindow : Window
             _ = Services.Updates.CheckIfDueAsync();
         };
         Services.Updates.Changed += ShowUpdateBar;
+        ApplyTheme();
         Nav.SelectedItem = Nav.MenuItems[0];
         _ = Services.Catalog.RefreshAsync(force: true);
         _ = Services.Updates.CheckIfDueAsync();
     }
 
     internal nint Handle => WinRT.Interop.WindowNative.GetWindowHandle(this);
+
+    /// Light, Dark, or System (follows Windows and switches the moment Windows does). Applied to the whole window.
+    internal void ApplyTheme()
+    {
+        if (Content is not FrameworkElement root) return;
+        root.RequestedTheme = AppSettings.Load(Services.Root).Theme switch
+        {
+            "light" => ElementTheme.Light,
+            "dark" => ElementTheme.Dark,
+            _ => ElementTheme.Default,
+        };
+    }
 
     private void OnNavChanged(NavigationView sender, NavigationViewSelectionChangedEventArgs args)
     {
