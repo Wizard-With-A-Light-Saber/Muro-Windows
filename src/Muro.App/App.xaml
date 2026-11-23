@@ -40,11 +40,11 @@
                 <Setter Property="BorderThickness" Value="1" />
             </Style>
 
-            <!-- Rounded pill for NEW / PLAYING. -->
+            <!-- Rounded-square badge for NEW / PLAYING. -->
             <Style x:Key="PillBadge" TargetType="Border">
                 <Setter Property="Margin" Value="12" />
                 <Setter Property="Padding" Value="10,3" />
-                <Setter Property="CornerRadius" Value="999" />
+                <Setter Property="CornerRadius" Value="8" />
                 <Setter Property="HorizontalAlignment" Value="Left" />
                 <Setter Property="VerticalAlignment" Value="Top" />
                 <Setter Property="Background" Value="{ThemeResource AccentFillColorDefaultBrush}" />
