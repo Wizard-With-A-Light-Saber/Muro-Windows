@@ -1,468 +1,346 @@
+<div align="center">
+
+<img src="assets/icon-dark.png" width="120" alt="Muro">
+
 # Muro for Windows
 
-Native Windows 11 app for live video and interactive wallpapers. **Version 1.0.0.**
+### Live and interactive wallpapers for your Windows desktop, with low CPU and RAM usage.
 
-Inspired by the original Muro for macOS by [MrRockySL](https://github.com/MrRockySL). Windows version made by
-[Wizard-With-A-Light-Saber](https://github.com/Wizard-With-A-Light-Saber).
+![Windows](https://img.shields.io/badge/Windows-11_x64-0078D4?logo=windows)
+![Version](https://img.shields.io/badge/Version-1.0.0-A9C4FF)
+![License](https://img.shields.io/badge/License-PolyForm_Shield-green)
+![No account](https://img.shields.io/badge/No_account-No_ads-brightgreen)
+[![Download](https://img.shields.io/badge/⬇_Download-Muro_for_Windows-A9C4FF)](../../releases/latest)
+[![Original Muro](https://img.shields.io/badge/Original-Muro_for_macOS-black?logo=apple)](https://github.com/MrRockySL/Muro)
 
-Built with the permission of the Muro author (MrRockySL). The code is under the
-[PolyForm Shield License 1.0.0](LICENSE), the same licence as the original. Wallpaper videos belong to their original
-creators.
+</div>
 
-**Legal:** [LICENSE](LICENSE) · [NOTICE](NOTICE.md) · [COPYRIGHT](COPYRIGHT.md) · [AUTHORS](AUTHORS.md) ·
-[PRIVACY](PRIVACY.md) · [TERMS](TERMS.md)
+---
 
-The sections below are the build log, milestone by milestone.
+> Inspired by the original [Muro for macOS](https://github.com/MrRockySL/Muro) by
+> [MrRockySL](https://github.com/MrRockySL). Windows version made by
+> [Wizard-With-A-Light-Saber](https://github.com/Wizard-With-A-Light-Saber), built with the original author's permission.
 
-## Build
+## Why this exists
+
+A still desktop picture is a waste of a good screen, and most live wallpaper apps for Windows come with a catch: a
+subscription, a paid tier holding the good wallpapers back, or an Electron shell that sits at hundreds of megabytes of RAM
+and keeps your CPU warm all day for a picture that moves.
+
+Muro for Windows brings the original Muro to Windows. The wallpaper catalog is the same one the macOS app uses.
+
+## What Muro does
+
+Muro plays looping video wallpapers behind your desktop icons on every display, and lets you browse a gallery of them. It
+is a native Windows app (C# and WinUI 3) that hands video decoding to your graphics hardware instead of the CPU, and
+pauses itself the moment you can't see it.
+
+No account, no ads, no analytics. Everything in the app is unlocked.
+
+---
+
+## Features
+
+- 🌙 **Live video wallpapers.** Looping, seamless, on every display at once, decoded by your GPU.
+- 🪄 **Interactive wallpapers.** Pages that draw themselves and follow your pointer and the sound your PC plays. New ones
+  arrive in Explore without an app update, and you can import your own. Desktop only, and they use more CPU and RAM than a
+  live wallpaper.
+- 🔒 **Lock screen picture.** Windows cannot play video on the lock screen, so Muro shows one frame of your wallpaper there.
+  Your own picture comes back when you switch it off.
+- 🖥️ **Screen saver.** Muro can be your screen saver, playing a wallpaper on every display when the PC is idle. How long the
+  PC waits is Windows' own setting.
+- 🪶 **Very low CPU usage.** Hardware decoding, and a held frame costs no CPU at all.
+- 😴 **Pauses itself** for full screen apps and games, display off, screen lock, battery saver and low battery.
+- 🖱️ **Play only on the desktop.** Hold a screen still while any window is open on it, and let it play when the desktop is clear.
+- ⚡ **Smooth, Efficient or Automatic.** Keep a wallpaper's original frame rate, or use a 30 fps copy for roughly a third of
+  the CPU. Automatic only does it for the heaviest wallpapers (4K at 50 fps or more).
+- 🖼️ **Explore gallery.** Browse the catalog, preview full screen, download only what you want.
+- 🔄 **New wallpapers arrive on their own.** The catalog updates without updating the app.
+- 📃 **Playlists on the clock.** Rotate through a set, shuffled or in order: every hour changes right on the hour, every
+  30 minutes changes at :00 and :30. The desktop, the lock screen and the screen saver can each play their own.
+- ⏱️ **Automations.** Give every wallpaper its own time: ten seconds each, or a full-day timeline where each wallpaper has
+  its own hours.
+- ⏸️ **Pause after a set time.** Let a wallpaper play for a while after it changes or after you unlock, then hold still on a
+  frame. Set it for everything or for one wallpaper, and turn on *Replay when the desktop is clear*.
+- 🎨 **Optional effects.** Day / night tint, mouse parallax, an audio flash, an audio visualiser (bars, waveform, particles or
+  VU meters), colour looks and your own GLSL shader. All off by default, and Muro tells you what each one costs.
+- 🎛️ **Match the accent colour.** The Windows accent colour (taskbar, Start, title bars) can follow your wallpaper.
+- 📥 **Import your own.** Drop in any video and it is converted once to HEVC and added to your library. Interactive
+  wallpapers too: an HTML page, or a folder with one.
+- 🔊 **Sound for your own videos.** Turn on Live Wallpaper Sound in Settings, and videos you import from then on keep their
+  sound. The one you set last is the one you hear.
+- 🔔 **Tray icon.** Pause, resume and switch wallpapers without opening the app. Your ten most recent wallpapers are in the
+  menu, and with several displays each one has its own submenu.
+- 🔗 **Links from other apps.** A script, a shortcut or another app can switch wallpaper, pause or resume with a `muro://`
+  link. More on that below.
+- 🌐 **Eleven languages.** English, Simplified and Traditional Chinese, Japanese, Korean, Spanish, French, German, Italian,
+  Brazilian Portuguese and Russian. Muro follows Windows, or you can pick one in Settings.
+- 🌗 **Light, Dark or System.** Muro matches Windows, or you choose.
+- ✨ **Tells you when there is a new Muro.** *What's new* shows what changed in the release.
+- 💾 **Space control.** See what each wallpaper costs on disk, delete what you do not want (imports included), or keep
+  them all on another drive.
+- 🔒 **Private.** No telemetry. See the [privacy policy](PRIVACY.md).
+
+> Requires **Windows 11 (64-bit)**, which is what Muro is built and tested on. The app targets Windows 10 version 2004 and
+> newer, but that is untested. Interactive wallpapers need the Microsoft Edge WebView2 runtime, which is part of Windows 11.
+> ARM64 is not built.
+
+---
+
+## What it looks like
+
+<p align="center">
+  <img src="assets/screenshots/settings.png" width="820" alt="Muro's Settings page: theme, language, links from other apps, live wallpaper sound, start with Windows, tray icon and accent colour">
+</p>
+
+<p align="center">
+  <img src="assets/screenshots/schedules.png" width="820" alt="Muro's Schedules page: Pause after, playlists and automations">
+</p>
+
+---
+
+## Install
+
+Download the latest release from the [Releases](../../releases/latest) page. There are three ways to run Muro:
+
+| File | What it is |
+|---|---|
+| `Muro-Setup-<version>.exe` | The installer. Per user, **no administrator rights**. Installs to `%LOCALAPPDATA%\Programs\Muro`, adds a Start menu shortcut, and can start Muro with Windows. |
+| `Muro-Portable-<version>-win-x64.exe` | One file that needs nothing installed. Copy it anywhere and double-click. It unpacks itself on the first run. |
+| `Muro-<version>-win-x64.zip` | The same folder as a zip. Unzip anywhere and run `Muro.exe`. |
+
+Everything the app needs (the .NET runtime, the Windows App SDK, mpv and ffmpeg) is included.
+
+**Windows SmartScreen will warn once.** Muro is free of a paid code-signing certificate, so Windows says "unknown
+publisher" on the first launch. Click **More info**, then **Run anyway**. You can check a download against `SHA256SUMS.txt`.
+
+Open Explore, pick a wallpaper, press **Download**, then **Apply** in the Library. Done.
+
+> Muro keeps running in the notification area after you close the window. That is what keeps your wallpaper playing. Use the
+> tray icon to control it, or **Quit Muro** to stop it and bring your own wallpaper back.
+
+To uninstall, use Windows' *Installed apps*. Your library and settings in `%LOCALAPPDATA%\Muro` are left alone. Delete that
+folder to remove them as well.
+
+---
+
+## Set it and forget it
+
+Muro can change your wallpaper for you, two ways. Both live on the **Schedules** page.
+
+**On a timer.** Pick a set of wallpapers, give each one a length, and Muro cycles through them. Ten seconds each, or an
+hour each. Every change is a crossfade, never a black flash.
+
+**By the clock.** Give each wallpaper its own hours instead. Something calm for the morning, something bright at noon,
+something dark at night. Drag the edge of a block on the 24-hour timeline to change its hours.
+
+A **playlist** rotates a set on the clock, in order or shuffled. Every 30 minutes means :00 and :30, every hour means right
+on the hour, and any other length is counted from midnight. A playlist that slept through several changes moves on once.
+
+---
+
+## Let it play, then let it rest
+
+A wallpaper does not have to move all day. With **Pause after**, a wallpaper plays for a while after it changes or after you
+unlock your PC, then holds still on a frame, which costs no CPU. Set it from ten seconds to an hour, for everything or for a
+single wallpaper from its menu in the Library. Turn on **Replay when the desktop is clear** to get the time again whenever
+your desktop is clear.
+
+---
+
+## Moving when you are looking, still when you are not
+
+Muro pauses itself the moment you can't see the wallpaper. A paused wallpaper costs no CPU, and it wakes straight away.
+
+- a full screen app or game covers the desktop (you can switch this off);
+- the display turns off, or the PC is locked;
+- Windows battery saver is on (you can switch this off);
+- the battery is low (you choose the level, and it resumes when you plug in);
+- **Play only on the desktop**, if you turn it on, freezes a screen while any window is open on it.
+
+---
+
+## Your screen saver too
+
+Turn on **Use Muro as the screen saver** in Settings. It plays a wallpaper on every display when the PC is idle: the desktop
+wallpaper, one wallpaper, a playlist or an automation. **Start after** is Windows' own setting, and **Try it now** previews it.
+
+---
+
+## Wallpapers that react to you
+
+A live wallpaper is a video. An interactive wallpaper is a small page that draws itself as it goes, so it can react to what
+you do.
+
+**Your pointer.** It follows the pointer on the desktop and answers a click. While the pointer is over an app's window it
+stops reacting, so it never gets in the way while you work.
+
+**Your music.** It moves with whatever your PC is playing. Muro only measures how loud the sound is, in memory. It never
+records or sends anything, and it does not use your microphone.
+
+Muro's own are in Explore under **Interactive Wallpapers**: Eclipse, White Sand, Grey Silk and Levi Ackerman. New ones
+arrive there without an update, and they download only when you ask, each file checked before it is used. You can also
+import your own from the Library: an HTML page, or a folder with one. An imported page cannot go online or see your other
+files.
+
+Interactive wallpapers work on the desktop only. On the lock screen and the screen saver, Muro uses the wallpaper's still
+picture. They use more CPU and RAM than a live wallpaper, because the picture is drawn live, and they pause like one when
+the desktop is covered, locked or asleep. Without the WebView2 runtime the still picture plays alone.
+
+<details>
+<summary>Making your own</summary>
+
+Muro sends your page these events on `window`:
+
+- `muro:mouse` with `{x, y, inside}`: where the pointer is, 0 to 1 from the top left. `inside` is false when the pointer is
+  over an app or on another screen.
+- `muro:click` with `{x, y}`
+- `muro:audio` with `{bands, bass, mid, treble, level}`: 64 bands of the sound, each 0 to 1.
+
+```js
+addEventListener('muro:mouse', e => move(e.detail.x, e.detail.y, e.detail.inside));
+addEventListener('muro:audio', e => pulse(e.detail.bass));
+```
+
+The page is served from its own folder only. It cannot reach the network, open windows or ask for permissions. Drop the
+`.html` file or the folder on the Library page to import it. You can check a page without looking at the screen with
+`Muro.Engine.exe --interactive-selftest <index.html>`.
+
+</details>
+
+---
+
+## Sound for your own videos
+
+Videos you import can play with their sound. Turn on **Live wallpaper sound** in Settings, and every video you import from
+then on keeps its sound. Wallpapers from the catalog stay silent. The wallpaper with sound that you set last is the one you
+hear, and the others go quiet. Videos imported before you turned it on are not changed.
+
+---
+
+## Muro in your language
+
+Muro speaks eleven languages: English, Simplified Chinese, Traditional Chinese, Japanese, Korean, Spanish, French, German,
+Italian, Brazilian Portuguese and Russian. It follows your Windows language. To pick another, open Settings, **Language**.
+
+> The translations were written with the help of AI, not by native speakers, and may have mistakes. Corrections are welcome
+> as pull requests: each language is one file in [`src/Muro.Core/Strings`](src/Muro.Core/Strings).
+
+---
+
+## Your library, your rules
+
+Every wallpaper in your Library has a delete button, and you can select several and clear them together. Imported videos can
+go too. Nothing is deleted without asking, and deleting a wallpaper cleans up everything that pointed at it: playlists,
+automations, the lock screen.
+
+Want them on another drive? The Library page has **Change download folder**: pick a folder and Muro moves your wallpapers
+there, shows how far it is, and lets you cancel.
+
+---
+
+## Muro tells you when there is a new version
+
+Muro checks this project's GitHub releases when it opens and every few hours. A newer release shows a banner with **What's
+new**: a dialog with the release notes and a Download button. It never installs anything by itself, and the automatic check
+stays silent if you are offline.
+
+---
+
+## New wallpapers arrive on their own
+
+Wallpapers are not built into the app. Muro reads a catalog from the web every time it opens (and when the window comes to
+the front), so new wallpapers appear in Explore with a **NEW** badge, no update needed. A wallpaper is downloaded only when
+you press Download or Preview. Videos and interactive wallpapers are hosted by the original Muro's catalog service.
+
+---
+
+## Control Muro from other apps
+
+Muro answers `muro://` links, so a script, a shortcut or another app can change the wallpaper without opening Muro's window:
 
 ```powershell
-./scripts/fetch-native.ps1        # libmpv + ffmpeg (LGPL builds) into third_party/
+Start-Process "muro://set?id=<wallpaper id>"                       # every display
+Start-Process "muro://set?id=<wallpaper id>&display=<monitor id>"  # one display
+Start-Process "muro://set?id=<wallpaper id>&surface=lockscreen"    # desktop, lockscreen, screensaver or all
+Start-Process "muro://pause"
+Start-Process "muro://resume"
+```
+
+A link does what picking the same wallpaper in the app does, and it works whether Muro is running or not. Links are carried
+out one at a time, in the order you send them, so `set` followed by `pause` ends paused.
+
+Wallpaper ids are in `%LOCALAPPDATA%\Muro\library.json`. A display's id is printed by `Muro.Engine.exe --list-monitors`; it
+contains `#` and `&`, so URL-encode it in the link, for example with `[uri]::EscapeDataString($id)` in PowerShell.
+
+Any web page can open a `muro://` link too, so a link can only do safe things:
+
+- `set` works only for a wallpaper that is already in your Library. A link never starts a download.
+- A `display` that is not connected right now is ignored.
+- A link never opens Muro's window and never shows a message. A link that is ignored is written to
+  `%LOCALAPPDATA%\Muro\logs\engine.log` with the reason.
+
+To turn links off, switch off **Links from other apps** in Settings.
+
+---
+
+## Build from source
+
+You need the [.NET 8 SDK](https://dotnet.microsoft.com/download/dotnet/8.0) on Windows.
+
+```powershell
+./scripts/fetch-native.ps1                 # libmpv and ffmpeg (LGPL builds) into third_party/
 dotnet build Muro.sln -c Release
 dotnet test tests/Muro.Core.Tests -c Release
+./scripts/publish.ps1                      # the installer, portable exe and zip into dist/ (about 4 minutes)
 ```
 
-## Engine harness (until the UI exists)
+`src/Muro.Cli` is a command-line tool (`muro.exe`) for scripting the library, downloads, playlists and automations. It is for
+development and is not in the installer. The full development history, milestone by milestone, with what was measured and
+what was not tested, is in [docs/BUILD-LOG.md](docs/BUILD-LOG.md).
 
-```powershell
-Muro.Engine.exe <video> [--monitor N=<video>]... [--efficient] [--play-only-on-desktop]
-                [--no-fullscreen-pause] [--low-battery N] [--seconds N] [--test-pause-after N]
-Muro.Engine.exe                 # no video: follows %LOCALAPPDATA%\Muro\config.json (hot-reloaded)
-Muro.Engine.exe --list-monitors # monitor index, size, DPI, stable id
-Muro.Engine.exe --dump          # prints the Progman/WorkerW window tree
-```
+---
 
-Until the library lands (M3) a wallpaper id is simply a video file path. Ctrl+C or `--seconds` exits and
-restores the desktop. `MURO_MPV_LOG=1` writes `%LOCALAPPDATA%\Muro\logs\mpv.log`; `MURO_MPV_OPTS="k=v,k=v"`
-overrides mpv options for benchmarking. Engine decisions are logged to `%LOCALAPPDATA%\Muro\logs\engine.log`.
+## How it works
 
-## M1 findings (Win11 build 26300, Intel Iris Xe, 8 logical CPUs)
+Muro is three small programs sharing one folder:
 
-- 24H2 shell layout detected (`SHELLDLL_DefView` and `WorkerW` are both children of Progman); the classic layout is also handled.
-- Hardware decode confirmed (`hevc-d3d11va`); no HEVC Store extension needed.
-- CPU, whole-machine: 1080p30 about 1.5%, 1080p60 about 2.3%, 4K60 about 2.8% (about 22% of one core). Paused: 0.00%.
-- Hard kill leaves the user's own wallpaper intact.
+| Program | Job |
+|---|---|
+| `Muro.exe` | The app: a WinUI 3 window with Featured, Explore, Library, Schedules and Settings. Closing it does not stop the wallpaper. |
+| `Muro.Engine.exe` | The background engine and tray icon. It puts a window behind the desktop icons on each display, plays the wallpaper in it with libmpv on the GPU, applies the pause rules, and runs playlists, automations and effects. It watches `config.json` and follows every change the app makes. |
+| `Muro.scr` | The screen saver (the same program Windows runs as a `.scr`). |
 
-## M2 findings
+Your data is in `%LOCALAPPDATA%\Muro`: `library.json`, `config.json`, `app-settings.json`, your wallpapers, and `logs\`.
 
-- One wallpaper window and player per monitor, matched by the monitor's PnP interface path (survives
-  reboots and replugging). Coordinates are physical pixels, so mixed DPI and negative-origin layouts work.
-- Pause rules (`Muro.Core.PausePolicy`, unit tested): user pause, display off, session lock, full-screen app
-  (borderless window covering a monitor, or `SHQueryUserNotificationState` busy/D3D/presentation on the
-  foreground monitor), Battery Saver, low battery (configurable threshold), and "Play only on desktop"
-  (per monitor, with the macOS settle rule so a window caught mid-animation cannot start playback).
-- Events, not polling: display change, power setting, session, and WinEvent hooks for foreground, minimise,
-  move and cloak. A 3 s heartbeat catches what no event announces.
-- The shell replaces its `WorkerW` a moment after a display change, taking our window with it. Every
-  evaluation checks the window is still alive and rebuilds it (recovery within ~3 s).
-- `0x052C` is only sent when no host window exists; re-sending it makes the shell discard the current one.
-- Measured on this machine: paused 0.10% of one core; 1080p60 playing about 14% of one core (1.8% of the
-  CPU); Efficient (fps filter) saves GPU presents but little CPU because every frame is still decoded.
-  A real 30 fps variant file comes with the transcoder in M3.
-- Not testable on a one-monitor machine: a real second display and hot-plug (the resolution-change path
-  exercises the same reconcile code). Not tested: Explorer restart, session lock, display sleep (no safe way to
-  trigger them from a script).
+| Folder | Contents |
+|---|---|
+| `src/Muro.App` | The WinUI 3 app |
+| `src/Muro.Engine` | The background engine, tray, effects and the interactive page layer |
+| `src/Muro.Core` | Library, catalog, schedules and settings logic, with no Windows dependencies |
+| `src/Muro.Platform` | Windows shell, window and tray integration |
+| `src/Muro.Playback` | libmpv playback |
+| `src/Muro.ScreenSaver`, `src/Muro.Portable`, `src/Muro.Cli` | The screen saver, the single-file launcher and the command-line tool |
+| `tests/` | Unit tests for the core logic |
 
-## M3: library, catalog, downloads, import (and the first UI)
+---
 
-**The app** (`src/Muro.App`, WinUI 3, unpackaged, self-contained):
-- **Explore**: the official catalog (551 wallpapers today), search and category filter, NEW badges, download on
-  demand with progress and cancel, full-screen preview through Muro own mpv (streams the short 720p loop, or
-  plays the local file once downloaded). The catalog is fetched on launch and whenever the window comes to the
-  front. A blocked connection shows what is wrong, never an empty grid.
-- **Library**: thumbnails, Apply (all displays or one, Smooth or Efficient), single or multi-select delete with a
-  confirmation, drag-and-drop or file-picker import, total size, and the download-folder controls with a cancellable
-  progress dialog.
-- Apply starts the engine (`Muro.Engine`) if it is not running; the engine is a separate process and keeps
-  the wallpaper playing when the app is closed.
+## Help and feedback
 
-**Command line** (`muro.exe`, same code as the app): `catalog`, `download`, `import`, `library`, `delete`, `set`,
-`clear`, `pause`, `resume`, `usage`, `folder`, `sweep`, `encoders`. Set `MURO_HOME` to use a throwaway library.
+Found a bug or have an idea? [Open an issue](../../issues). Please include your Windows version and, for a bug, the end of
+`%LOCALAPPDATA%\Muro\logs\engine.log`.
 
-**Behavior carried over from the macOS app**
-- library.json is edited only through `LibraryWriter` (in-process lock plus a lock file), and a damaged file is
-  never overwritten.
-- Delete order: off the desktop, then manifest, then files, then every list that points at it.
-- Orphan sweep spares anything younger than 15 minutes and anything hidden (partial downloads).
-- The download folder is a "Muro Wallpapers" folder with a marker file, joined to the library by a directory
-  junction (no admin rights needed). A folder Muro did not make is never used.
-- Importing the same file twice is recognised by a fingerprint of its size and first and last megabyte.
+## Support the original
 
-**Findings on this machine**
-- Encoder detection does a real half-second test encode per candidate. Here Intel Quick Sync HEVC is chosen first;
-  SVT-AV1 is the software fallback (the LGPL ffmpeg build has no x264/x265).
-- The Efficient 30 fps copy takes 1080p60 from about 14% to about 8-10% of one core.
-- Full-screen preview costs about 10% of one core while it plays.
+The wallpapers and the idea come from [Muro for macOS](https://github.com/MrRockySL/Muro) by
+[MrRockySL](https://github.com/MrRockySL). If you enjoy Muro, [sponsor the original developer](https://github.com/sponsors/MrRockySL).
 
-**Not done / limits**
-- Moving the download folder first takes the wallpapers off screen and puts them back (Windows cannot delete an
-  open file). The macOS app also reacts to a drive being ejected; Windows safe-removal handling is not built yet.
-- The playlist and automation stores arrive in M4; deleting a wallpaper already calls a hook for them.
-- Previews still shutting down mpv from the UI thread is avoided; the engine disposes players synchronously and
-  could be hardened the same way.
+---
 
-## M4: playlists, automations, Pause After, crossfade
+## Legal
 
-**What exists**
-- **Playlists**: rotate on a timer (1 to 1440 minutes), in order or shuffled. Same JSON shape as the macOS app.
-- **Automations**: by timer (each wallpaper its own length, 10 s to 24 h) or by the clock (each wallpaper its own
-  hours, windows may run past midnight, gaps keep what was playing). Edited on the Schedules page; the clock mode
-  has a 24-hour timeline where you drag a block edge (snaps to 5 minutes; an edge shared with the next block
-  takes it along; no block can be squeezed under 15 minutes or pushed over another).
-- **Pause After**: global setting plus a per-wallpaper override (Library card, the gear button). Zero on a
-  wallpaper means never, which is different from having no value. **Replay when the desktop is clear** restarts
-  the clock each time the desktop clears.
-- **Crossfade**: a change of wallpaper dissolves over 0.6 s. The outgoing frame is held as a still in a layered
-  window above the new video, which fades once the new video has a frame.
-- Deleting a wallpaper first removes it from every playlist and automation (a clock window's hours go to the
-  window before it), stops any schedule left empty, and only then takes it off the desktop and deletes the files.
-- Everything runs in the engine, so schedules keep running with the app closed. A manual Apply from the app or
-  `muro set` stops the running schedule.
+[LICENSE](LICENSE) (PolyForm Shield 1.0.0) · [NOTICE](NOTICE.md) · [COPYRIGHT](COPYRIGHT.md) · [AUTHORS](AUTHORS.md) ·
+[PRIVACY](PRIVACY.md) · [TERMS](TERMS.md)
 
-**CLI**: `muro playlist ...`, `muro automation ...`, `muro schedule`, `muro pause-after ...` (see `muro --help`).
-
-**Measured on this PC** (Win11 build 26300)
-- Timer steps of 10 s switch on time; the running step is persisted in `schedule.json`.
-- Pause After 5 s froze the wallpaper at 5 s (log: `paused (PauseAfter)`); a wallpaper set to never kept playing.
-- Crossfade: screen luminance ramps 88 to 130 in about 16 steps over about 0.5 s; before it, it was a hard cut
-  (it never flashed black, since the old frame stays until the new one is ready).
-- Real mouse drag on the timeline: the 08:00 edge moved +155 minutes, both neighbours followed, Save wrote it.
-
-**Defaults I chose (nobody was available to ask; change any of them)**
-- Starting a schedule while nothing is on screen shows the first step at once; stopping a schedule restores what was
-  on the desktop before it started (if that wallpaper still exists).
-- A schedule drives every display, so per-display assignments give way to it while it runs.
-- A playlist that slept through several intervals advances once, not once per missed interval (as macOS).
-- A clock schedule started while nothing is playing and inside a gap shows the last window to end.
-- Timeline edges snap to 5 minutes; the timeline edits edges only. Reordering the list moves wallpapers between
-  slots (hours stay with the rows), as on macOS. Dragging a whole block is not built.
-- Block colours follow the position in the list.
-
-**Not done in M4 (with reasons)**
-- The **lock screen** and **screen saver** playlists run through the same scheduler and state file
-  (`schedule.json` already has a slot for each), but nothing applies them until M6.
-- The tray **play / replay** button that restarts Pause After came in M5 ("Play again" in the tray menu).
-- A stray `paused (Fullscreen)` appeared once while a heavy screenshot loop ran; it did not reproduce in a
-  controlled run and I could not find the cause.
-
-**Checked through the real UI on this PC (throwaway library):** Play and Stop on a playlist (the engine starts
-by itself, takes over, and Stop puts the previous wallpaper back); dragging a block edge on the timeline,
-including the last block end at 24:00; the playlist editor dialog; saving an automation.
-
-**Not tested, please check:**
-- Building a *timer* automation from scratch in the editor (only the clock mode was exercised through the UI).
-- Creating a playlist from scratch in the dialog, and the Shuffle switch there.
-- The per-wallpaper Pause After menu (the gear button on a Library card); the same rule was tested from the CLI.
-- Pause After re-arming after an unlock (Win+L) or display wake, and "Replay when the desktop is clear" end to end.
-- Schedule catch-up after the PC sleeps and resumes, or after a clock or time-zone change.
-- A playlist rotating on its own across several intervals (only 1 and 10 second timer steps were run live).
-- Per-display behaviour of schedules on a second monitor.
-
-**"Drag blocks"** is built as dragging a block *edge* (and the list order). Dragging a whole block sideways is not
-built; say if you want it.
-
-## M5: tray, Settings, Start with Windows, update checker, Featured
-
-**What exists**
-- **Tray icon**, owned by the engine (so it is there with the app closed). Left click opens Muro, or brings it
-  to the front. Right click: Open Muro, Pause / Resume wallpaper, Play again (restarts Pause After), Stop
-  "<schedule>" while a playlist or automation runs, Quit Muro. The icon comes back after an Explorer restart and
-  is removed when the engine quits. It can be turned off in Settings.
-- **Settings** (the gear at the bottom of the navigation): Start with Windows, tray icon, playback speed (0.5x to
-  1.5x, now actually applied by the engine: it was a config field that nothing read), default quality, the four
-  energy rules (covered by a full-screen app, Battery Saver, low battery with its percentage, play only on the
-  desktop), the connected displays, library size and a button to open the Muro folder, and About with
-  *Check for updates*.
-- **Start with Windows** writes `HKCU\...\Run\Muro` pointing at `Muro.Engine.exe` and nothing else: Muro starts
-  quietly with its tray icon and plays the wallpaper; the app window opens from the tray. If you switch it off in
-  Windows (Settings, Apps, Startup, or Task Manager) the switch shows Off and says why; switching it on here
-  allows it again.
-- **Update checker**: reads the GitHub releases of `Wizard-With-A-Light-Saber/Muro-Windows` on launch, whenever the window comes to the
-  front (at most every 6 hours), and on demand. A newer release shows a banner (once per version) with *What's
-  new*, a dialog with the release notes and a Download button. The automatic check is silent when it fails; a
-  manual one says so.
-- **Featured** (first tab, the macOS Home): a banner, a strip to choose which downloaded wallpaper it shows, the
-  **Latest drop** (everything published at the newest publish time) and **Muro's Pick** (12 at random, drawn once
-  a day, never the drop, remembered for the day).
-- The engine is now a windowless exe (`WinExe`) with the Muro icon, so a sign-in launch opens no console. It
-  attaches to the console that started it for the harness switches; in a plain console window the prompt can
-  come back before the output, so use `| more` or `Start-Process -Wait -NoNewWindow`.
-
-**Defaults I chose (nobody was available to ask; change any of them)**
-- **Update rule.** The macOS release (a .dmg, version 5.x) lives in the same repository, so `releases/latest` would
-  offer it to Windows forever. Instead the newest non-draft, non-prerelease release that has a **Windows asset**
-  wins: an `.exe` or `.msi`, or a `.zip` whose name contains `win` (the installer is preferred). A release without
-  one is not an update. Publish Windows builds as GitHub releases with such an asset and a version above the
-  current one (`Directory.Build.props` says 0.1.3). Nothing is installed automatically: Download opens the asset in
-  the browser. Only the app checks; the tray does not.
-- **Quit Muro** in the tray stops the wallpaper (the engine exits and your own wallpaper returns). Applying a
-  wallpaper, or Open Muro then Apply, starts it again.
-- The tray icon is **on** by default; Start with Windows is **off**.
-- **Default quality** decides how a wallpaper plays when Muro picks the mode for you (see "Efficient by default for heavy wallpapers" below); the Library keeps its explicit Smooth / Efficient menu.
-- **Pause After** and *Replay when the desktop is clear* stay on the Schedules page (one place, so two controls
-  cannot disagree); the download-folder controls stay on the Library page.
-- The Featured banner follows the macOS rules: only wallpapers you downloaded, never your own imports, never a
-  stream. There is no bundled wallpaper on Windows, so before the first download it shows the newest catalog
-  wallpaper as a still picture with a Download button. The banner is a still image, not a looping video.
-- Every settings change reads `config.json`, changes one field and saves at once, because the schedule runner
-  writes that file too. UI-only choices (default quality, banner choice, today's Pick, the seen release) are in
-  `app-settings.json`. An older Muro build left a `settings.json` in `%LOCALAPPDATA%\Muro` (different fields):
-  Muro does not read or write it.
-- The window icon and tray icon are made from `assets/icon.png` in the repository root by `scripts/make-icon.ps1`.
-- **A busy or damaged `config.json` is never overwritten.** Reading is tried a few times first (a virus scanner or
-  the engine's own file watcher may hold the file for a moment); if it still cannot be read, `Save` refuses
-  instead of writing defaults over your wallpaper assignment, and Settings says the setting was not saved. Writes
-  go to a temp file with its own name and the rename is retried briefly. `app-settings.json` follows the same rule.
-- **The tray icon retries.** If Windows refuses it while the shell is still starting (a launch at sign-in can beat
-  it), it is added again every 2 seconds for about a minute, and again whenever Explorer restarts.
-
-**Not done in M5 (with reasons)**
-- Appearance (Default / Light / Dark): the app follows the Windows theme.
-- *Clear library and cache*: it deletes data, and doing it safely needs the playing and scheduled wallpapers
-  excluded; not worth guessing at.
-- Screen saver delay and lock-screen settings: M6.
-- The menu-bar icon styles and Dock icon options have no Windows meaning.
-- Update download and install inside the app (the installer is M7).
-
-**Checked live on this PC (throwaway library, a local fake release feed)**
-- Tray: icon appears, menu opens, Pause writes `paused` and the engine logs `paused (User)`, Play again wakes a
-  wallpaper Pause After froze, Quit exits and removes the icon, Open Muro starts the app when it is closed, a click
-  on the icon restores a minimised window.
-- Settings: tray, desktop-only and speed each change exactly one field in `config.json`; the engine logs
-  `speed 1.5x`. Start with Windows wrote the Run value (the engine path) and removed it again.
-- Updates: with the feed serving a macOS 5.2 release first and a Windows 9.9.0 second, the banner offered 9.9.0;
-  What's new showed the parsed notes; Later retired the banner and stored the version. Against real GitHub the
-  check answers "up to date" (there is no Windows release yet).
-- Featured: banner from the library, choosing another wallpaper from the strip, Apply (starts the engine), the
-  drop and Pick rows, and the Pick being saved for the day.
-
-**Not tested, please check:**
-- Start with Windows through a real sign-in. I never rebooted; I only wrote and removed the registry value.
-  Test it with the **installed** build, not a `bin\Release` one: the value stores the engine path it was set from.
-- Switching Start with Windows off in Task Manager and back on in Settings.
-- The tray after a real Explorer restart. I posted the `TaskbarCreated` message to the tray window and the icon
-  stayed listed exactly once, but I did not restart Explorer. The retry after a *failed* first add (a sign-in
-  race) was not exercised either: I could not make Windows refuse the add.
-- The config-file protections are covered by unit tests (file held open, damaged file, short lock), not by a real
-  virus scanner racing the engine.
-- The tray menu on a high-DPI second monitor, and keyboard use of the tray (Windows decides how that works).
-- *Download* in the update dialog (it opens the asset URL in the browser; the test feed pointed at example.com).
-- The hero's Efficient apply when a 30 fps copy has to be made first (progress bar on the banner).
-- Playback speed by eye (the engine logs the change and mpv accepted it; I did not time a clip).
-- Dark/light theme looks, and narrow window widths, of the new pages.
-
-## M6: screen saver and lock screen
-
-**What exists**
-- **Screen saver** (`Muro.scr`, built by `src/Muro.ScreenSaver`): plays the chosen wallpaper on every display and ends
-  on the first key, click, wheel turn or mouse movement of more than about 10 pixels (a small jiggle does not end
-  it). It is a normal Windows screen saver, so Windows' own idle timer starts it. Settings, *Screen saver*:
-  **Use Muro as the screen saver** points Windows' per-user setting (`SCRNSAVE.EXE`, no admin rights) at
-  `Muro.scr` and remembers what was there, so turning it off puts back exactly the old program, on/off state and
-  delay. **Start after** is Windows' own delay. **Plays**: the desktop wallpaper (the default), one wallpaper, a
-  playlist or an automation (the engine runs it for the screen saver exactly like the desktop one). **Try it now**.
-- **Lock screen**: Windows cannot play video on the lock screen, so Muro sets one **still frame** of the chosen
-  wallpaper (up to 3840 wide, made once by ffmpeg into `Stills\`). A playlist or automation changes the picture as
-  it moves on. The first time, your own lock screen picture is saved; turning it off, or deleting the wallpaper,
-  puts it back. No admin rights or package identity are needed.
-- The playlist, automation and Pause After machinery now has one runner per surface (desktop, screen saver, lock
-  screen), each with its own state in `schedule.json` (the slots M4 left).
-- Deleting a wallpaper also clears it from the screen saver and lock screen and removes its still.
-- Fixed on the way: mpv keeps the PC awake while a video plays by default, which would have stopped Windows'
-  screen saver and display sleep for as long as the wallpaper played. It is now switched off in the player.
-
-**Defaults I chose (nobody was available to ask; change any of them)**
-- The screen saver plays the desktop wallpaper unless you pick something else; with no library it ends at once.
-- Turning Muro on as the screen saver keeps Windows' current delay (20 minutes here) or uses 10 minutes if the
-  screen saver was off.
-- The lock screen still is the frame at about 2 seconds in (or the middle of a short clip).
-- Only a lock screen set to **Picture** is replaced cleanly. If it was Windows Spotlight or a slideshow, Muro
-  switches it to a picture, says so in Settings, and turning it off restores the saved picture, not Spotlight.
-- The screen saver's small preview in Windows' own dialog is left blank, and its Settings button shows a message
-  that points to Muro.
-
-**Checked live on this PC (throwaway library)**
-- The screen saver on both displays, over everything, no pointer; ended by key, click, wheel and movement, not by a
-  2 px jiggle; Windows launched `Muro.scr /s` by itself (its log shows it) when asked to start the screen saver.
-- Settings: on writes `SCRNSAVE.EXE` and keeps the 1200 s delay; Start after 1 minute is written to Windows;
-  off restored the exact original values (no program, active, 1200 s).
-- An automation chosen for the screen saver rotated its wallpaper every 10 s through the engine.
-- The lock screen: on changed the picture (440 KB against the original 773 KB), off brought back a picture with a
-  pixel difference of 0 from the original.
-
-**Not tested, please check:**
-- Windows starting the screen saver on its own after real idle time (I could not stay idle: the PC is in use).
-  Triggering it by message did start `Muro.scr /s`, but that run found the real library empty and ended.
-- The lock screen itself (press Win+L and look). I only read the stored picture back, never looked at the real
-  lock screen.
-- A lock screen set to Spotlight or a slideshow, and Windows policies that manage the lock screen.
-- Several lock screen changes in a row (a playlist) on a slow PC, and a long wallpaper whose still takes time.
-- Multi-monitor with different resolutions for the screen saver (both displays here are 1920x1080).
-- The Settings button in Windows' screen saver dialog, and *Try it now* from the app.
-- `muro` has no `--on screensaver|lockscreen` switch yet: the screen saver and lock screen are set from Settings.
-- Installed layout: `Muro.scr` and the engine's ffmpeg lookup are only exercised in the development tree (M7).
-
-## M7: package, installer, CI
-
-**What exists**
-- `scripts/publish.ps1` builds `dist/`: the install folder `dist/Muro/`, **`Muro-<version>-win-x64.zip`** (unzip anywhere
-  and run `Muro.exe`), **`Muro-Setup-<version>.exe`** (per-user installer, no admin rights) and `SHA256SUMS.txt`.
-  The version comes from `Directory.Build.props` (0.1.3). The two names are what the app's update check needs:
-  an `.exe`, or a `.zip` containing `win`.
-- One flat folder with one shared .NET and Windows App SDK runtime (about 350 MB installed, 99 MB installer):
-  `Muro.exe` (app), `Muro.Engine.exe`, `Muro.scr`, `libmpv-2.dll`, `ffmpeg\ffmpeg.exe`, `licenses\`. Nothing
-  needs to be installed first. The command-line tool `muro.exe` is not in the package (it is a development tool;
-  its name would also clash with `Muro.exe` on Windows).
-- The installer: installs to `%LOCALAPPDATA%\Programs\Muro`, a Start menu shortcut, optional desktop shortcut,
-  optional **Start with Windows** (the same Run entry Settings writes), stops a running Muro and engine first so an
-  update can replace them, and on uninstall removes the Run entry and a screen saver entry that still points at
-  `Muro.scr`. Your library and settings in `%LOCALAPPDATA%\Muro` are left alone.
-- `.github/workflows/windows.yml`: build, test and package on every push and pull request. A tag such as `v0.1.0`
-  (which must equal the version in `Directory.Build.props`) also publishes a GitHub release with the zip, the
-  installer and the checksums, which is what makes the app offer the update.
-- `scripts/fetch-installer-tools.ps1` downloads the Inno Setup compiler (6.4.3, from NuGet, no installation) into
-  `third_party/inno`.
-
-**Checked on this PC:** the whole package built from scratch (about 4 minutes); the installer ran silently into a
-scratch folder; the installed `Muro.exe` ran against a throwaway library, applying a wallpaper started the engine
-from the installed folder, Start with Windows recorded the installed engine path (then removed), the installed
-`Muro.scr` played and ended on input, and the uninstaller removed the folder, the uninstall entry and the
-shortcut, leaving no Run or screen saver entry.
-
-**Defaults I chose / limits**
-- **Unsigned.** Windows SmartScreen will warn ("unknown publisher") on the installer and the exe. A code signing
-  certificate fixes that; signing is one extra step in `publish.ps1` and the workflow.
-- Uninstalling while Muro is the screen saver clears the entry rather than restoring the old program (that backup
-  lives in Muro's settings): turn it off in Settings first. A lock screen picture from Muro stays until you turn
-  it off in Settings too.
-- The installer stops Muro with `taskkill`, so an update briefly drops the wallpaper; restart Muro afterwards (or
-  sign in again if it starts with Windows).
-- The workflow file is at the root of this repo. If `Windows/` moves into the main Muro repository, the file must
-  go to that repository's `.github/workflows` with `working-directory: Windows`.
-- Windows 10 and 11 (x64) only; ARM64 is not built.
-
-**Not tested, please check:**
-- The GitHub workflow itself (I cannot run Actions from here; the steps are the ones I ran by hand, and the YAML
-  parses). The first run may need a tweak, for example `windows-latest` having a different .NET SDK than 8.0.100.
-- A clean PC with no .NET or Windows App SDK (everything is bundled, but this PC has both).
-- Updating over an existing install while Muro is running (the stop step is written, not exercised), and the
-  installer's *Start with Windows* and *desktop shortcut* options (I only ran the defaults).
-- Windows 10, and 4K or high-DPI scaling of the installer wizard.
-
-## Fixes after M7
-
-- **Wallpaper paused on a clear desktop.** With no app windows open and the bare desktop clicked, Windows reports its
-  "busy" notification state (the desktop window is as big as the screen), which was read as a full-screen app and
-  froze that display, while a partly covered desktop kept playing. The busy state is now ignored when the focused
-  window is the desktop or the taskbar. A real full-screen window still pauses and resumes (checked live).
-- A wallpaper's own Pause After (Library card, gear) now takes effect at once; the engine did not watch `library.json`.
-- **Full screen on one display froze the other.** Windows' "busy" state is system-wide, and the engine blamed whatever
-  window was in front, so working on Display 1 while a game or video was full screen on Display 2 paused Display 1
-  too. The state now only counts when the window in front fills its own monitor. The engine logs why it thinks a
-  display is covered (`full screen: <display>: window '<title>' [<class>]`) to make any report easy to trace.
-  Checked live: a full-screen window on Display 2 paused only Display 2, a click on Display 1's bare desktop paused
-  nothing, and closing the window resumed Display 2.
-
-## Accent colour follows the wallpaper
-
-Settings, General, **Match the accent colour to the wallpaper** (off by default). While it is on, the Windows accent colour
-(taskbar, Start, title bars, and Muro's own buttons) is the dominant colour of the wallpaper on the **main display**, and
-it changes by itself whenever that wallpaper changes (a new apply, a playlist or automation step). Windows' own "pick from
-my background" cannot do this: it only looks at the still wallpaper image, never the live one.
-
-- The colour is picked from the wallpaper's thumbnail: colourful mid-tones count most, grey, black and white barely count
-  (a dark picture with one orange light gives orange), and the result is made vivid and mid-light so white text reads on
-  it. A picture with no colour gives a grey. The eight shades Windows keeps are built from it.
-- It writes the per-user accent values (`HKCU\...\DWM` and `Explorer\Accent`, no admin rights), switches Windows' own
-  automatic colour off while it is on, and broadcasts the change. The first time, your own values are saved to
-  `accent-backup.json` in the Muro folder; switching it off puts them back and deletes the file.
-- When Windows' automatic colour comes back, Windows itself recomputes three raw values from your still wallpaper
-  (`AccentColor`, `ColorizationColor`, `ColorizationAfterglow`); the colour you see is the same.
-- The engine does the work, so it keeps following the wallpaper with the app closed. Changing the other display does
-  nothing. Uninstalling while it is on leaves the colour as it is: turn it off in Settings first.
-- Checked live: on gave blue for the blue wallpaper and red for the red one, switching the main display's wallpaper
-  re-applied, changing the other display did not, off restored Windows' automatic colour (`AutoColorization` back as a
-  DWORD), and the Settings switch did the same through the real UI.
-- Not tested: a wallpaper with no colour at all on real hardware (only in a unit test), high-contrast themes, and
-  accent colour on Start and taskbar being switched off in Windows (the accent still changes; Windows decides where it shows).
-
-## Efficient by default for heavy wallpapers
-
-Settings, Playback, **Default quality** is now **Automatic** (the default), Smooth or Efficient. Automatic gives a wallpaper the
-real 30 fps copy only when it is heavy, **4K at 50 fps or more** (3840x2160 and up, 50 fps and up); 1440p60, 4K30 and
-1080p60 stay Smooth. Measured here: the worst case (1080p60 plus a 4K60 wallpaper on two displays) went from about 4%
-of the whole CPU to about 1.5%.
-
-- It applies to anything that picks a mode for you: Apply on the Featured tab, each playlist or automation step, the
-  screen saver, and `muro set` without a flag. A step moves between modes as it moves between wallpapers.
-- **What you choose yourself always wins**: the Smooth and Efficient entries in a Library card's Apply menu, `muro set
-  --smooth` or `--efficient`, and Smooth or Efficient picked as the default quality.
-- If the 30 fps copy does not exist yet, the engine makes it in the background (about 30 s for a short 4K60 clip). Until it
-  is ready the wallpaper plays with its frame rate capped at the player, and then switches to the copy by itself. The
-  copy costs disk space (about the size of the original).
-- Wallpapers you applied before this stay as they were. The quality choice is stored as `qualityMode` in
-  `app-settings.json` and only when picked; the old `defaultMode` key that earlier builds wrote as a default is ignored,
-  so existing installs get Automatic.
-- Not tested: a very long 4K60 wallpaper (the copy takes proportionally longer), and a disk with no free space for the copy.
-
-## The single-file exe (Muro-Portable)
-
-`dist/Muro-Portable-<version>-win-x64.exe` (about 150 MB) is the whole app in **one file**: copy it anywhere and double-click.
-It needs nothing installed (no .NET, no installer), makes no registry entries and no shortcuts.
-
-- **First run:** it unpacks itself to `%LOCALAPPDATA%\Muro Portable\<version>-<hash>\` (about 2 seconds, with a small
-  "Setting up Muro" window) and starts `Muro.exe` from there. **Every later run** just starts it (about 1.5 seconds).
-  Windows Defender scans the freshly written files the first time they run, so the very first start can take 30 seconds or
-  more on a PC that has never seen them (measured here: 5 s when Defender already knew the files, 38 s when it did not).
-- A newer Muro-Portable.exe unpacks next to the old one and removes the older folders. Two copies started at once
-  unpack once. To remove Muro, delete that folder and the exe; your library in `%LOCALAPPDATA%\Muro` is separate.
-- **How it is built:** `scripts/publish.ps1` builds a small self-contained single-file launcher (`src/Muro.Portable`, 12 MB)
-  and appends the package zip and a trailer (`[zip][id][id length][zip length]["MUROPAYL"]`) to it. The launcher reads its
-  own file, copies the zip out and uses the standard zip extraction. The zip itself is now written entry by entry with
-  forward-slash names (Windows PowerShell 5.1's own zip writers use backslashes, which hung an earlier version of the launcher).
-- The update check prefers `Muro-Setup-*.exe` over `Muro-Portable-*.exe` when a release has both.
-- Unsigned, like the installer: SmartScreen will warn once.
-- Not tested: a PC without .NET or without internet (nothing needs either), running it from a read-only folder or a network
-  drive (it only reads itself; the unpack goes to `%LOCALAPPDATA%`), and a full disk (the launcher shows an error message).
-
-## Catching up with the macOS app 6.0 to 6.2
-
-What the macOS app gained since the 5.x this port started from, and where each piece is here.
-
-- **Playlists on the clock** (6.2). Every 30 minutes is :00 and :30, every hour is on the hour, any other length is
-  counted from local midnight (and restarts at 00:00). `Scheduler.PlaylistDeadline`. A playlist that slept through
-  boundaries still advances once.
-- **Light, Dark or System** (6.2). Settings, Theme. Stored as `theme` in `app-settings.json`; System follows Windows live.
-- **Live wallpaper sound** (6.1). Settings, `liveSound` in `config.json`. A video imported while it is on keeps its audio
-  (aac in the master, `hasSound` on its library entry) and always plays its master, since the 30 fps and look copies are
-  silent. The wallpaper set last is the one heard. Downloaded wallpapers stay silent. Videos imported before it was
-  turned on are not changed.
-- **`muro://` links** (6.1). `muro://set?id=<id>[&display=<monitor id>][&surface=desktop|lockscreen|screensaver|all]`,
-  `muro://pause`, `muro://resume`. The engine registers the protocol per user and carries a link out by writing `config.json`,
-  so it works with Muro open or closed. Safe by rule: only wallpapers already in the library, never a download, a display
-  that is not connected is ignored, and an ignored link is logged with the reason (`logs/engine.log`). Settings can turn
-  links off (`linksOff`). Tested live with `pause`, `resume`, an unknown id and a `download` link.
-- **Tray menu** (6.1). The ten most recent wallpapers (`recents` in `app-settings.json`, kept by the engine) and, with more
-  than one display, a submenu per display. The per-display sound button is not built: Windows plays one wallpaper sound.
-- **Interactive wallpapers** (6.1, hosted since 6.2). Pages that draw themselves, from `interactive.json` beside
-  `catalog.json` (Eclipse, White Sand, Grey Silk, Levi Ackerman). Explore and `muro catalog` list them under Interactive
-  Wallpapers and they download only on request, every file checked against its size and SHA-256 before the folder is
-  swapped in (`Hosted Interactive/<id>/`). The engine draws the page with **WebView2** in a child window over the still,
-  below the desktop icons, on its own STA thread, and sends it `muro:mouse {x,y,inside}`, `muro:click {x,y}` and
-  `muro:audio {bands (64), bass, mid, treble, level}` (the audio is the same loopback capture as the visualiser, and a
-  muted output counts as silence). The pointer is sampled, since the wallpaper gets no mouse messages: a page reacts only
-  while the pointer is over the bare desktop. The page is locked in: its own folder under one virtual host name, no
-  network, no new windows, no permissions. It is hidden while the screen is frozen, and without the WebView2 runtime the
-  still plays alone. The still is also what the lock screen, the screen saver and the Windows wallpaper use. Your own HTML
-  page, or a folder with one, can be imported (file picker or dropped on Library; 500 files, 100 MB a file, 300 MB total,
-  hidden files and links skipped) and gets a plain still with its name. Checked: `Muro.Engine --interactive-selftest
-  <index.html>` loads Eclipse, feeds it mouse, click and audio events and reads back no page errors. **Not checked by eye**:
-  the PC was locked, so the page was never seen on the desktop.
-- **Eleven languages** (6.1). English, Simplified and Traditional Chinese, Japanese, Korean, Spanish, French, German, Italian,
-  Brazilian Portuguese and Russian; Settings, Language (or follow Windows). The English sentence is the key and each
-  language is one embedded `Strings/<code>.json` of 150 strings: every on-screen string in the XAML, the tray menu and the
-  combo boxes and menus the code builds. Anything else (rare error messages, dialogs, the What's new text) stays English.
-  `Localizer` swaps each page's text as it loads and remembers the English, so changing language re-translates live;
-  Schedules' Pause After list is read once per run and needs a restart. **The translations were written by an AI, not by
-  native speakers, and want a review before a public release.**
-- **Not ported:** the welcome film, the Apple section, `.saver` screen savers and macOS 26 Liquid Glass (macOS only).
+The wallpaper videos and interactive wallpapers shown in Muro belong to their original creators and are not covered by this
+licence. See [NOTICE.md](NOTICE.md).
