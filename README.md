@@ -87,16 +87,6 @@ No account, no ads, no analytics. Everything in the app is unlocked.
 
 ---
 
-## What it looks like
-
-<p align="center">
-  <img src="assets/screenshots/settings.png" width="820" alt="Muro's Settings page: theme, language, links from other apps, live wallpaper sound, start with Windows, tray icon and accent colour">
-</p>
-
-<p align="center">
-  <img src="assets/screenshots/schedules.png" width="820" alt="Muro's Schedules page: Pause after, playlists and automations">
-</p>
-
 ---
 
 ## Install
