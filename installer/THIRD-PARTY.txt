@@ -13,5 +13,12 @@ FFmpeg (ffmpeg\ffmpeg.exe) - LGPL v2.1 or later build
   Source and build scripts: https://ffmpeg.org and https://github.com/zhongfly/mpv-winbuild
   (release 2026-10-25-baa3e11d42, ffmpeg-lgpl-x86_64-git-31855b2a7).
 
+NAudio - MIT
+  Measures the loudness of the sound your PC plays, for the audio effects. https://github.com/naudio/NAudio
+
+Microsoft Edge WebView2 (Microsoft.Web.WebView2 SDK and the WebView2 runtime) - Microsoft Software License Terms
+  Draws interactive wallpapers. The SDK is bundled; the runtime is part of Windows 11 or installed by Microsoft.
+  https://developer.microsoft.com/microsoft-edge/webview2/
+
 .NET 8 runtime and Windows App SDK (Microsoft): bundled so Muro runs without installing them. MIT and the
   Windows App SDK licence terms.

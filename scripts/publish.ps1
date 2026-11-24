@@ -40,7 +40,7 @@ foreach ($needed in 'Muro.exe', 'Muro.Engine.exe', 'Muro.scr', 'libmpv-2.dll', '
 $licenses = Join-Path $stage 'licenses'
 New-Item -ItemType Directory -Force $licenses | Out-Null
 Copy-Item (Join-Path $root 'installer\THIRD-PARTY.txt') $licenses
-foreach ($file in '..\NOTICE.md', '..\LICENSE', '..\LICENSE.md') {
+foreach ($file in 'NOTICE.md', 'LICENSE', 'COPYRIGHT.md', 'AUTHORS.md', 'PRIVACY.md', 'TERMS.md') {
     $path = Join-Path $root $file
     if (Test-Path $path) { Copy-Item $path $licenses }
 }

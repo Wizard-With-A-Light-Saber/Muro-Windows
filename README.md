@@ -1,13 +1,18 @@
 # Muro for Windows
 
-Native Windows 11 port of Muro (live video wallpapers). Work in progress, built milestone by milestone.
+Native Windows 11 app for live video and interactive wallpapers. **Version 1.0.0.**
 
 **Credits.** Inspired by the original Muro for macOS by [MrRockySL](https://github.com/MrRockySL). Windows version made by
 [Wizard-With-A-Light-Saber](https://github.com/Wizard-With-A-Light-Saber). The same credits are in Settings, Credits.
 
-Built with the permission of the Muro author (MrRockySL). Muro itself is under the PolyForm Shield 1.0.0
-license; keep that permission on record before any public release. Wallpaper videos belong to their
-original creators (see `../NOTICE.md`).
+Built with the permission of the Muro author (MrRockySL). The code is under the
+[PolyForm Shield License 1.0.0](LICENSE), the same licence as the original. Wallpaper videos belong to their original
+creators.
+
+**Legal:** [LICENSE](LICENSE) · [NOTICE](NOTICE.md) · [COPYRIGHT](COPYRIGHT.md) · [AUTHORS](AUTHORS.md) ·
+[PRIVACY](PRIVACY.md) · [TERMS](TERMS.md)
+
+The sections below are the build log, milestone by milestone.
 
 ## Build
 
@@ -172,7 +177,7 @@ built; say if you want it.
   quietly with its tray icon and plays the wallpaper; the app window opens from the tray. If you switch it off in
   Windows (Settings, Apps, Startup, or Task Manager) the switch shows Off and says why; switching it on here
   allows it again.
-- **Update checker**: reads the GitHub releases of `MrRockySL/Muro` on launch, whenever the window comes to the
+- **Update checker**: reads the GitHub releases of `Wizard-With-A-Light-Saber/Muro-Windows` on launch, whenever the window comes to the
   front (at most every 6 hours), and on demand. A newer release shows a banner (once per version) with *What's
   new*, a dialog with the release notes and a Download button. The automatic check is silent when it fails; a
   manual one says so.

@@ -10,7 +10,7 @@ namespace Muro.Core.Updates;
 /// than this build wins; no such release means up to date.
 public static class UpdateChecker
 {
-    public const string ReleasesUrl = "https://api.github.com/repos/MrRockySL/Muro/releases?per_page=20";
+    public const string ReleasesUrl = "https://api.github.com/repos/Wizard-With-A-Light-Saber/Muro-Windows/releases?per_page=20";
 
     /// Throws on network or HTTP failure so a user-initiated check can say it failed; the automatic
     /// check swallows that. Returns null when this build is current.

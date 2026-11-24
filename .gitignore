@@ -2,5 +2,10 @@ bin/
 obj/
 third_party/
 dist/
+# Local tooling and notes, never part of the app.
+.remember/
+.claude/
+.claude-flow/
+.swarm/
 *.user
 .vs/
