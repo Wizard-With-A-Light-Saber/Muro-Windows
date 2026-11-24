@@ -2,8 +2,8 @@
 
 Native Windows 11 app for live video and interactive wallpapers. **Version 1.0.0.**
 
-**Credits.** Inspired by the original Muro for macOS by [MrRockySL](https://github.com/MrRockySL). Windows version made by
-[Wizard-With-A-Light-Saber](https://github.com/Wizard-With-A-Light-Saber). The same credits are in Settings, Credits.
+Inspired by the original Muro for macOS by [MrRockySL](https://github.com/MrRockySL). Windows version made by
+[Wizard-With-A-Light-Saber](https://github.com/Wizard-With-A-Light-Saber).
 
 Built with the permission of the Muro author (MrRockySL). The code is under the
 [PolyForm Shield License 1.0.0](LICENSE), the same licence as the original. Wallpaper videos belong to their original
