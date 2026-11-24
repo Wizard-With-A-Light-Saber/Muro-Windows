@@ -87,6 +87,12 @@ No account, no ads, no analytics. Everything in the app is unlocked.
 
 ---
 
+## What it looks like
+
+<p align="center">
+  <img src="assets/screenshots/muro-demo.gif" width="820" alt="Muro for Windows: Featured with the playing wallpaper, the Explore gallery, the Library, Schedules and Settings">
+</p>
+
 ---
 
 ## Install
