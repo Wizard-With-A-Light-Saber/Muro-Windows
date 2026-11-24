@@ -148,5 +148,8 @@
  "NEW IN MURO": "Muro 신규",
  "Downloading...": "다운로드 중...",
  "Interactive": "인터랙티브",
- "All categories": "모든 카테고리"
+ "All categories": "모든 카테고리",
+ "Credits": "크레딧",
+ "Inspired by the original Muro for macOS by": "macOS용 오리지널 Muro 제작",
+ "Windows version made by": "Windows 버전 제작"
 }

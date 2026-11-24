@@ -302,6 +302,21 @@
                     </StackPanel>
                 </StackPanel>
             </Border>
+
+            <TextBlock Text="Credits" Style="{StaticResource SectionLabel}" />
+            <Border Style="{StaticResource Card}">
+                <StackPanel Spacing="12">
+                    <StackPanel Orientation="Horizontal" Spacing="6">
+                        <TextBlock Text="Inspired by the original Muro for macOS by" VerticalAlignment="Center" />
+                        <HyperlinkButton Content="MrRockySL" NavigateUri="https://github.com/MrRockySL" Padding="0" />
+                    </StackPanel>
+                    <Rectangle Style="{StaticResource RowDivider}" />
+                    <StackPanel Orientation="Horizontal" Spacing="6">
+                        <TextBlock Text="Windows version made by" VerticalAlignment="Center" />
+                        <HyperlinkButton Content="Wizard-With-A-Light-Saber" NavigateUri="https://github.com/Wizard-With-A-Light-Saber" Padding="0" />
+                    </StackPanel>
+                </StackPanel>
+            </Border>
         </StackPanel>
     </ScrollViewer>
 </Page>

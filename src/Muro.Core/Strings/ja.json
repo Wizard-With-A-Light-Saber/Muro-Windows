@@ -148,5 +148,8 @@
  "NEW IN MURO": "Muro の新着",
  "Downloading...": "ダウンロード中...",
  "Interactive": "インタラクティブ",
- "All categories": "すべてのカテゴリ"
+ "All categories": "すべてのカテゴリ",
+ "Credits": "クレジット",
+ "Inspired by the original Muro for macOS by": "macOS 版オリジナル Muro の作者",
+ "Windows version made by": "Windows 版の制作者"
 }

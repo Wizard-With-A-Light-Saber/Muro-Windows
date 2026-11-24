@@ -2,6 +2,9 @@
 
 Native Windows 11 port of Muro (live video wallpapers). Work in progress, built milestone by milestone.
 
+**Credits.** Inspired by the original Muro for macOS by [MrRockySL](https://github.com/MrRockySL). Windows version made by
+[Wizard-With-A-Light-Saber](https://github.com/Wizard-With-A-Light-Saber). The same credits are in Settings, Credits.
+
 Built with the permission of the Muro author (MrRockySL). Muro itself is under the PolyForm Shield 1.0.0
 license; keep that permission on record before any public release. Wallpaper videos belong to their
 original creators (see `../NOTICE.md`).
