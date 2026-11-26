@@ -6,12 +6,12 @@ their original creators.
 mpv (libmpv-2.dll) - LGPL v2.1 or later build
   Plays the wallpapers. Dynamically linked; replace libmpv-2.dll with another build to change it.
   Source and build scripts: https://github.com/mpv-player/mpv and https://github.com/zhongfly/mpv-winbuild
-  (release 2026-10-25-baa3e11d42, the mpv-dev-lgpl package).
+  (release 2026-11-25-d32c910be6, the mpv-dev-lgpl package).
 
 FFmpeg (ffmpeg\ffmpeg.exe) - LGPL v2.1 or later build
   Run as a separate program to import videos, make 30 fps copies and lock screen stills.
   Source and build scripts: https://ffmpeg.org and https://github.com/zhongfly/mpv-winbuild
-  (release 2026-10-25-baa3e11d42, ffmpeg-lgpl-x86_64-git-31855b2a7).
+  (release 2026-11-25-d32c910be6, ffmpeg-lgpl-x86_64-git-c81e35cf2).
 
 NAudio - MIT
   Measures the loudness of the sound your PC plays, for the audio effects. https://github.com/naudio/NAudio

@@ -38,7 +38,7 @@ Muro includes these components. Each keeps its own licence.
 | [Windows App SDK](https://github.com/microsoft/WindowsAppSDK) and .NET 8 | The app and its runtime, bundled so nothing needs installing. | MIT and Microsoft licence terms |
 | System.Drawing.Common | Draws the overlays and placeholder pictures. | MIT |
 
-The mpv and FFmpeg builds come from <https://github.com/zhongfly/mpv-winbuild> (release 2026-10-25-baa3e11d42); source
+The mpv and FFmpeg builds come from <https://github.com/zhongfly/mpv-winbuild> (release 2026-11-25-d32c910be6); source
 code and build scripts are there and at <https://github.com/mpv-player/mpv> and <https://ffmpeg.org>. The installer is built
 with [Inno Setup](https://jrsoftware.org/isinfo.php), which is not part of the installed app. See also
 [installer/THIRD-PARTY.txt](installer/THIRD-PARTY.txt).
