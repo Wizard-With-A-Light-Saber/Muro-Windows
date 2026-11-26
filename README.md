@@ -7,7 +7,7 @@
 ### Live and interactive wallpapers for your Windows desktop, with low CPU and RAM usage.
 
 ![Windows](https://img.shields.io/badge/Windows-11_x64-0078D4?logo=windows)
-![Version](https://img.shields.io/badge/Version-1.0.0-A9C4FF)
+![Version](https://img.shields.io/badge/Version-1.0.1-A9C4FF)
 ![License](https://img.shields.io/badge/License-PolyForm_Shield-green)
 ![No account](https://img.shields.io/badge/No_account-No_ads-brightgreen)
 [![Download](https://img.shields.io/badge/⬇_Download-Muro_for_Windows-A9C4FF)](../../releases/latest)
