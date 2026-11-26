@@ -115,7 +115,7 @@ internal sealed class CatalogService
 /// because someone who pressed a button deserves an answer.
 internal sealed class UpdateService
 {
-    public enum State { Idle, Checking, UpToDate, Available, Failed }
+    public enum State { Idle, Checking, UpToDate, Available, Failed, Installing, Rejected }
 
     /// Long enough to stay far inside GitHub's unauthenticated rate limit, short enough to hear about a release the day it lands.
     private static readonly TimeSpan Interval = TimeSpan.FromHours(6);
@@ -133,7 +133,7 @@ internal sealed class UpdateService
 
     public async Task CheckAsync(bool userInitiated)
     {
-        if (Current == State.Checking) return;
+        if (Current is State.Checking or State.Installing) return;
         _last = DateTime.UtcNow;
         if (userInitiated) Set(State.Checking);
         try
@@ -156,12 +156,76 @@ internal sealed class UpdateService
         Changed?.Invoke();
     }
 
-    /// Download the update: the installer when the release has one, its page otherwise. Never a dead end.
+    /// Update: an installed copy downloads the installer and runs it silently, which replaces the files in the folder
+    /// Muro is installed in and starts Muro again. Anything else (a portable copy, a release without an installer)
+    /// opens the download or the release page in the browser. Never a dead end.
     public void OpenDownload()
     {
-        if (Latest is null) return;
-        Process.Start(new ProcessStartInfo((Latest.DownloadUrl ?? Latest.Page).AbsoluteUri) { UseShellExecute = true });
+        if (Latest is null || Current == State.Installing) return;
         MarkSeen();
+        if (Latest.DownloadUrl is { } url && CanInstallInPlace(url)) _ = InstallAsync(url);
+        else OpenInBrowser();
+    }
+
+    // Only the installer leaves an uninstaller next to the app, so its presence says "this copy was installed".
+    private static bool CanInstallInPlace(Uri url) =>
+        url.Scheme == Uri.UriSchemeHttps
+        && Path.GetFileName(url.LocalPath).Contains("setup", StringComparison.OrdinalIgnoreCase)
+        && File.Exists(Path.Combine(AppContext.BaseDirectory, "unins000.exe"));
+
+    private void OpenInBrowser() =>
+        Process.Start(new ProcessStartInfo((Latest!.DownloadUrl ?? Latest.Page).AbsoluteUri) { UseShellExecute = true });
+
+    private async Task InstallAsync(Uri url)
+    {
+        var release = Latest!;
+        Set(State.Installing);
+        try
+        {
+            // The signed list comes first, and it must name this version's installer, so an older signed one cannot
+            // be passed off as new. Nothing runs unless the downloaded bytes match it.
+            var name = $"Muro-Setup-{release.Version}.exe";
+            var sums = await Services.Http.GetByteArrayAsync(new Uri(url, ReleaseSignature.SumsName));
+            var signature = await Services.Http.GetByteArrayAsync(new Uri(url, ReleaseSignature.SignatureName));
+            if (!ReleaseSignature.Verify(sums, signature)
+                || ReleaseSignature.HashFor(System.Text.Encoding.UTF8.GetString(sums), name) is not { } expected)
+            {
+                Reject(release);
+                return;
+            }
+
+            var file = Path.Combine(Directory.CreateTempSubdirectory("muro-update-").FullName, name);
+            using (var response = await Services.Http.GetAsync(url, HttpCompletionOption.ResponseHeadersRead))
+            {
+                response.EnsureSuccessStatusCode();
+                await using var source = await response.Content.ReadAsStreamAsync();
+                await using var target = File.Create(file);
+                await source.CopyToAsync(target);
+            }
+            string actual;
+            await using (var downloaded = File.OpenRead(file))
+                actual = Convert.ToHexString(await System.Security.Cryptography.SHA256.HashDataAsync(downloaded));
+            if (!actual.Equals(expected, StringComparison.OrdinalIgnoreCase))
+            {
+                File.Delete(file);
+                Reject(release);
+                return;
+            }
+            // The installer stops Muro (this process included), reuses the folder Muro is installed in, and starts it again.
+            Process.Start(new ProcessStartInfo(file, "/SILENT /SUPPRESSMSGBOXES /NORESTART") { UseShellExecute = true });
+        }
+        catch (Exception ex) when (ex is HttpRequestException or IOException or OperationCanceledException or System.ComponentModel.Win32Exception)
+        {
+            // Includes a release with no signature (404): show its page, never hand over the unchecked file.
+            Set(State.Available);
+            Process.Start(new ProcessStartInfo(release.Page.AbsoluteUri) { UseShellExecute = true });
+        }
+    }
+
+    private void Reject(ReleaseInfo release)
+    {
+        Set(State.Rejected);
+        Process.Start(new ProcessStartInfo(release.Page.AbsoluteUri) { UseShellExecute = true });
     }
 
     /// Opening the update, or dismissing its banner, is how someone acknowledges it: the banner is shown once per version.

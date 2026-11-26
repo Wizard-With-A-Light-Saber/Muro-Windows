@@ -5,6 +5,38 @@ namespace Muro.Core.Tests;
 
 public class UpdateTests
 {
+    // ---- ReleaseSignature
+
+    [Fact]
+    public void OnlyTheKeyHoldersUntouchedListVerifies()
+    {
+        var (pem, publicKey) = ReleaseSignature.CreateKey(null);
+        var (_, otherPublic) = ReleaseSignature.CreateKey(null);
+        var data = System.Text.Encoding.UTF8.GetBytes(new string('a', 64) + "  Muro-Setup-1.0.1.exe\r\n");
+        var signature = ReleaseSignature.Sign(data, pem, null);
+
+        Assert.True(ReleaseSignature.Verify(data, signature, publicKey));
+        Assert.False(ReleaseSignature.Verify(data, signature, otherPublic));
+        Assert.False(ReleaseSignature.Verify(data, signature, ""));
+        data[0] ^= 1;
+        Assert.False(ReleaseSignature.Verify(data, signature, publicKey));
+    }
+
+    [Fact]
+    public void AnEncryptedKeySigns()
+    {
+        var (pem, publicKey) = ReleaseSignature.CreateKey("pw");
+        Assert.True(ReleaseSignature.Verify([1, 2], ReleaseSignature.Sign([1, 2], pem, "pw"), publicKey));
+    }
+
+    [Fact]
+    public void TheHashIsForExactlyThatFile()
+    {
+        var sums = new string('a', 64) + "  Muro-Setup-1.0.1.exe\r\n" + new string('b', 64) + "  Muro-1.0.1-win-x64.zip\r\n";
+        Assert.Equal(new string('a', 64), ReleaseSignature.HashFor(sums, "Muro-Setup-1.0.1.exe"));
+        Assert.Null(ReleaseSignature.HashFor(sums, "Muro-Setup-1.0.2.exe"));
+    }
+
     // ---- AppVersion (ported from the macOS AppVersionTests)
 
     [Theory]

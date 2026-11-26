@@ -51,6 +51,8 @@ try
         "folder" => await FolderCommand(),
         "sweep" => Sweep(),
         "encoders" => await EncodersCommand(),
+        "sign-keygen" => SignKeygen(),
+        "sign-release" => SignRelease(),
         "playlist" or "automation" or "schedule" or "pause-after" => ScheduleCommands.Run(args, root),
         _ => Fail("Unknown command: " + args[0] + "\n\n" + Usage),
     };
@@ -60,6 +62,33 @@ catch (CatalogException ex) { return Fail(ex.Title + ". " + ex.Detail); }
 catch (Exception ex) when (ex is IOException or TranscodeException or HttpRequestException) { return Fail(ex.Message); }
 
 static int Fail(string message) { Console.Error.WriteLine(message); return 1; }
+
+// Release signing (maintainer only). The private key stays outside the repository; MURO_SIGNING_PASSWORD
+// encrypts it when set. See ReleaseSignature.
+static string SigningKeyPath() => Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".muro-signing", "update-signing.pem");
+
+static int SignKeygen()
+{
+    var path = SigningKeyPath();
+    if (File.Exists(path)) return Fail("A key already exists at " + path + ". Replacing it would break updates for installed copies.");
+    var (pem, publicKey) = Muro.Core.Updates.ReleaseSignature.CreateKey(Environment.GetEnvironmentVariable("MURO_SIGNING_PASSWORD"));
+    Directory.CreateDirectory(Path.GetDirectoryName(path)!);
+    File.WriteAllText(path, pem);
+    Console.WriteLine("Private key: " + path + " (back it up, never commit it)\nPublicKey for ReleaseSignature.cs:\n" + publicKey);
+    return 0;
+}
+
+int SignRelease()
+{
+    if (rest.Count != 1) return Fail("Usage: muro sign-release <SHA256SUMS.txt>");
+    var data = File.ReadAllBytes(rest[0]);
+    var signature = Muro.Core.Updates.ReleaseSignature.Sign(data, File.ReadAllText(SigningKeyPath()), Environment.GetEnvironmentVariable("MURO_SIGNING_PASSWORD"));
+    // A key that does not match the one built into the app would publish an update nobody can install.
+    if (!Muro.Core.Updates.ReleaseSignature.Verify(data, signature)) return Fail("This key does not match ReleaseSignature.PublicKey.");
+    File.WriteAllBytes(rest[0] + ".sig", signature);
+    Console.WriteLine("Signed: " + rest[0] + ".sig");
+    return 0;
+}
 
 string? Opt(string name) => rest.Contains(name) && rest.IndexOf(name) + 1 < rest.Count ? rest[rest.IndexOf(name) + 1] : null;
 bool Flag(string name) => rest.Contains(name);

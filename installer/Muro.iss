@@ -12,7 +12,12 @@ AppId={{7C1A5E54-3B1D-4F1E-9B7D-5A6F0C2E8D41}
 AppName=Muro
 AppVersion={#AppVersion}
 AppPublisher=Muro (Windows port)
+; C: by default, no admin rights needed (so an update can install itself silently). The folder page is shown on a
+; fresh install to pick another place; an update or repair skips it and reuses the folder Muro is installed in.
 DefaultDirName={localappdata}\Programs\Muro
+DisableDirPage=auto
+UsePreviousAppDir=yes
+UninstallDisplayName=Muro
 DisableProgramGroupPage=yes
 PrivilegesRequired=lowest
 ArchitecturesAllowed=x64compatible
@@ -36,6 +41,7 @@ Source: "{#StageDir}\*"; DestDir: "{app}"; Flags: recursesubdirs createallsubdir
 
 [Icons]
 Name: "{userprograms}\Muro"; Filename: "{app}\Muro.exe"
+Name: "{userprograms}\Uninstall Muro"; Filename: "{uninstallexe}"
 Name: "{userdesktop}\Muro"; Filename: "{app}\Muro.exe"; Tasks: desktopicon
 
 [Registry]
@@ -47,6 +53,9 @@ Root: HKCU; Subkey: "Software\Classes\muro"; Flags: uninsdeletekey
 
 [Run]
 Filename: "{app}\Muro.exe"; Description: "Start Muro"; Flags: nowait postinstall skipifsilent
+; An update started from inside Muro runs silently: bring the wallpaper and the app back without asking.
+Filename: "{app}\Muro.Engine.exe"; Flags: nowait runhidden; Check: WizardSilent
+Filename: "{app}\Muro.exe"; Flags: nowait; Check: WizardSilent
 
 [Code]
 // Stops Muro, its engine (wallpaper windows are destroyed with it, so the desktop wallpaper comes back) and a
@@ -56,6 +65,21 @@ var
   ResultCode: Integer;
 begin
   Exec('taskkill.exe', '/F /IM Muro.exe /IM Muro.Engine.exe /IM Muro.scr', '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
+end;
+
+// Running Setup again over the same version is the repair: it puts back every program file. Say so, so it is a
+// choice. A newer or older Setup just updates (the folder is reused).
+function InitializeSetup: Boolean;
+var
+  Installed: String;
+begin
+  Result := True;
+  if WizardSilent then Exit;
+  if RegQueryStringValue(HKCU, 'Software\Microsoft\Windows\CurrentVersion\Uninstall\{7C1A5E54-3B1D-4F1E-9B7D-5A6F0C2E8D41}_is1', 'DisplayVersion', Installed)
+     and (Installed = '{#AppVersion}') then
+    Result := MsgBox('Muro ' + Installed + ' is already installed.' + #13#10 + #13#10 +
+      'Repair it? This puts back any missing or damaged program files. Your wallpapers and settings are kept.',
+      mbConfirmation, MB_YESNO) = IDYES;
 end;
 
 function PrepareToInstall(var NeedsRestart: Boolean): String;

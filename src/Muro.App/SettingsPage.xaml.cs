@@ -498,6 +498,8 @@ public sealed partial class SettingsPage : Page
             UpdateService.State.Checking => "Checking for updates...",
             UpdateService.State.UpToDate => "Muro is up to date.",
             UpdateService.State.Failed => "Muro could not check for updates. Check your connection and try again.",
+            UpdateService.State.Rejected => "The update could not be verified, so it was not installed.",
+            UpdateService.State.Installing =>"Downloading the update. Muro will close and open again by itself.",
             UpdateService.State.Available when updates.Latest is { } release => "Muro " + release.Version + " is available.",
             _ => "Muro looks for updates by itself every few hours.",
         };

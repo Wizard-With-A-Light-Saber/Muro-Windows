@@ -90,4 +90,10 @@ if (-not $SkipInstaller) {
 
 Get-ChildItem $dist -File | ForEach-Object { "{0}  {1}" -f (Get-FileHash $_.FullName -Algorithm SHA256).Hash.ToLower(), $_.Name } |
     Set-Content (Join-Path $dist 'SHA256SUMS.txt')
+# Sign the checksum list so installed copies can verify the update (upload SHA256SUMS.txt.sig with the release).
+# The key never goes to CI: a build without it still works, but updates to it are not installed automatically.
+if (Test-Path (Join-Path $env:USERPROFILE '.muro-signing\update-signing.pem')) {
+    dotnet run --project src/Muro.Cli -c $Configuration -- sign-release (Join-Path $dist 'SHA256SUMS.txt')
+    if ($LASTEXITCODE -ne 0) { throw 'signing failed' }
+} else { Write-Warning 'No signing key: this release is unsigned and will not auto-install.' }
 Get-ChildItem $dist -File | Select-Object Name, @{ n = 'MB'; e = { [math]::Round($_.Length / 1MB, 1) } } | Format-Table -AutoSize
