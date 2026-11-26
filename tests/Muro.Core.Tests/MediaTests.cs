@@ -48,6 +48,24 @@ public class MediaTests
         Assert.InRange(Transcoder.RecommendedBitrate(1920, 1080, 60), 5_000_000, 6_000_000);
     }
 
+    // A PC without a hardware HEVC encoder falls back to AV1, which ffmpeg refuses to put in a MOV.
+    [Fact]
+    public async Task TheSoftwareAv1FallbackWritesAFile()
+    {
+        var ffmpeg = Ffmpeg.Locate();
+        if (ffmpeg is null) return;
+        using var lib = new TempLibrary();
+        var output = Path.Combine(lib.Root, "out.mov");
+
+        var args = Transcoder.BuildArgs(new("libsvtav1", "", false, "av1"), "testsrc2=size=640x360:rate=30:duration=1",
+            output, new VideoInfo("h264", 640, 360, 30, 1), false);
+        args.InsertRange(args.IndexOf("-i"), ["-f", "lavfi"]);
+        var (code, err) = await Ffmpeg.RunAsync(ffmpeg, args, TimeSpan.FromSeconds(60), null, 0, default);
+
+        Assert.True(code == 0, err);
+        Assert.True(new FileInfo(output).Length > 0);
+    }
+
     [Fact]
     public void Args_HevcGetsTheHvc1Tag_Av1DoesNot_AndBothDropAudio()
     {

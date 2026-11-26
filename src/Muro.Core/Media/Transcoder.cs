@@ -88,7 +88,8 @@ public static class Transcoder
         // hvc1 is the tag Windows and Apple players expect for HEVC in MOV.
         if (encoder.Codec == "hevc") args.AddRange(["-tag:v", "hvc1"]);
         // Explicit container: the output is written under a hidden .partial name first.
-        args.AddRange(["-f", "mov", "-movflags", "+faststart", output]);
+        // ffmpeg refuses AV1 in MOV; the player reads the contents, so an MP4 under a .mov name plays.
+        args.AddRange(["-f", encoder.Codec == "av1" ? "mp4" : "mov", "-movflags", "+faststart", output]);
         return args;
     }
 
