@@ -357,6 +357,9 @@ internal sealed class EffectsRunner : IDisposable
     // Runs on NAudio's capture thread, about every 80 ms: one loudness number, scaled by a slowly falling peak.
     private void OnAudio(object? sender, WaveInEventArgs e)
     {
+        // An idle output device still delivers empty buffers. Counting one as "heard" kept the last loud frame alive,
+        // so the visualiser kept drawing old sound with nothing playing.
+        if (e.BytesRecorded < 4 * _channels) return;
         var samples = MemoryMarshal.Cast<byte, float>(e.Buffer.AsSpan(0, e.BytesRecorded / 4 * 4));
         var rms = (float)EffectMath.Rms(samples);
         _peak = Math.Max(Math.Max(rms, 0.02f), _peak * 0.998f);
