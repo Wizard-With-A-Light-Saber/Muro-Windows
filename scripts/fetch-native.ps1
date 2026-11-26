@@ -7,8 +7,8 @@ $root = Join-Path $PSScriptRoot '..\third_party'
 $seven = @('C:\Program Files\7-Zip\7z.exe', '7z') | Where-Object { Get-Command $_ -ErrorAction SilentlyContinue } | Select-Object -First 1
 if (-not $seven) { throw '7-Zip is required to unpack the .7z archives' }
 $items = @{
-  mpv    = 'mpv-dev-lgpl-x86_64-20261025-git-baa3e11d42.7z'
-  ffmpeg = 'ffmpeg-lgpl-x86_64-git-31855b2a7.7z'
+  mpv    = 'mpv-dev-lgpl-x86_64-20261125-git-d32c910be6.7z'
+  ffmpeg = 'ffmpeg-lgpl-x86_64-git-c81e35cf2.7z'
 }
 foreach ($name in $items.Keys) {
   $dest = Join-Path $root $name
